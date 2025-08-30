@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Campus Carpool Coordinator — Chitkara University</title>
+  <meta name="description" content="Connect with peers, share rides, and join official shuttles at Chitkara University. Safe, secure, and sustainable campus transportation.">
+  <link rel="stylesheet" href="styles/main.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"></noscript>
+</head>
+<body>
+  <script>
+    // Enhanced mobile menu functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      const menuToggle = document.getElementById('menu-toggle');
+      const hamburgerIcon = document.querySelector('.hamburger-icon');
+      const navActions = document.querySelector('.nav-actions');
+      const navLinks = document.querySelectorAll('.nav-actions a');
+      
+      // Ensure hamburger click works
+      hamburgerIcon.addEventListener('click', function(e) {
+        e.preventDefault();
+        menuToggle.checked = !menuToggle.checked;
+        
+        // Add visual feedback
+        if (menuToggle.checked) {
+          navActions.classList.add('menu-open');
+          document.body.style.overflow = 'hidden';
+        } else {
+          navActions.classList.remove('menu-open');
+          document.body.style.overflow = '';
+        }
+      });
+      
+      // Close menu when clicking navigation links
+      navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+          menuToggle.checked = false;
+          navActions.classList.remove('menu-open');
+          document.body.style.overflow = '';
+        });
+      });
+      
+      // Close menu when clicking outside
+      document.addEventListener('click', function(e) {
+        if (menuToggle.checked && 
+            !hamburgerIcon.contains(e.target) && 
+            !navActions.contains(e.target)) {
+          menuToggle.checked = false;
+          navActions.classList.remove('menu-open');
+          document.body.style.overflow = '';
+        }
+      });
+      
+      // Handle escape key
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && menuToggle.checked) {
+          menuToggle.checked = false;
+          navActions.classList.remove('menu-open');
+          document.body.style.overflow = '';
+        }
+      });
+    });
+  </script>
+  <div class="bg-animate" aria-hidden="true"></div>
+
+  <header class="header">
+    <div class="container header-content">
+      <a class="brand" href="#" aria-label="Campus Carpool Homepage">
+        <img src="assets/cu_logo.png" alt="Chitkara University Logo" width="48" height="48">
+        <div>
+          <h1>Campus Carpool</h1>
+          <div>Chitkara University</div>
+        </div>
+      </a>
+      
+      <!-- Mobile Menu Toggle (CSS-only) -->
+      <input type="checkbox" id="menu-toggle" class="menu-toggle" aria-label="Toggle mobile menu">
+      <label for="menu-toggle" class="hamburger-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+      </label>
+      
+      <nav class="nav-actions" role="navigation" aria-label="Main navigation">
+        <a class="btn btn-ghost" href="#about">About</a>
+        <a class="btn btn-ghost" href="src/find-rides.html">Find Rides</a>
+        <a class="btn btn-ghost" href="src/create-ride.html">Offer Ride</a>
+        <a class="btn btn-ghost" href="src/dashboard.html">Dashboard</a>
+        <a class="btn btn-secondary" href="src/register.html">Sign In</a>
+        <a class="btn btn-primary" href="src/register.html">Get Started</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero" role="region" aria-labelledby="hero-heading">
+      <div class="hero-card">
+        <div class="hero-left" aria-hidden="true">
+          <img src="assets/cu_logo.png" alt="Chitkara University Emblem" width="48" height="48">
+        </div>
+        <div class="hero-content">
+          <h2 id="hero-heading">Smart Campus Transportation</h2>
+          <p>Connect with peers, share rides, and access official campus shuttles. Your convenient and safe way to travel within and around Chitkara University.</p>
+          <div class="hero-cta">
+            <a class="btn btn-primary" href="create-ride.html">🚗 Offer a Ride</a>
+            <a class="btn btn-secondary" href="find-rides.html">🔍 Find Rides</a>
+          </div>
+        </div>
+      </div>
+      <div class="hero-illustration" aria-hidden="true">
+        <img src="assets/car.png" alt="Modern carpool illustration" loading="lazy">
+        <svg class="road" viewBox="0 0 400 50" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M0,20 Q200,60 400,20" stroke="#D30B24" stroke-width="4" fill="transparent" stroke-linecap="round" />
+        </svg>
+      </div>
+    </section>
+
+    <section id="features" class="features" role="region" aria-labelledby="features-heading">
+      <h2 id="features-heading" class="sr-only">Platform Features</h2>
+      
+      <article class="feature">
+        <div class="feature-icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L3.09 8.26L12 14L20.91 8.26L12 2Z" fill="white"/>
+            <path d="M12 22L3.09 15.74L12 10L20.91 15.74L12 22Z" fill="white" opacity="0.7"/>
+          </svg>
+        </div>
+        <h3>Offer Rides</h3>
+        <p>Share your daily commute with fellow students and staff. Set your route, schedule, and available seats in seconds. Build connections while sharing costs.</p>
+      </article>
+
+      <article class="feature">
+        <div class="feature-icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M21 16V8C21 6.9 20.1 6 19 6H5C3.9 6 3 6.9 3 8V16C3 17.1 3.9 18 5 18H19C20.1 18 21 17.1 21 16Z" fill="white"/>
+            <path d="M7 10H17V14H7V10Z" fill="white" opacity="0.7"/>
+          </svg>
+        </div>
+        <h3>Smart Matching</h3>
+        <p>Advanced algorithms match you with rides based on your location, schedule, and preferences. Filter by route, time, and trusted campus community members.</p>
+      </article>
+
+      <article class="feature">
+        <div class="feature-icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L13.09 8.26L22 9L13.09 15.74L12 22L10.91 15.74L2 9L10.91 8.26L12 2Z" fill="white"/>
+          </svg>
+        </div>
+        <h3>Official Shuttles</h3>
+        <p>Access official campus transportation schedules and book seats on university shuttles. Real-time updates and guaranteed campus-approved transportation.</p>
+      </article>
+    </section>
+
+    <section id="about" class="about-section" role="region" aria-labelledby="about-heading">
+      <div class="about-card">
+        <h2 id="about-heading">Why Choose Campus Carpool?</h2>
+        <p class="about-intro">Join Chitkara University's most trusted transportation community. Connect, save, and travel smart with your fellow students and staff.</p>
+        
+        <div class="about-grid">
+          <div class="about-item">
+            <div class="about-icon">🔒</div>
+            <h3>Secure & Verified</h3>
+            <p>University email verification ensures you're connecting only with verified Chitkara community members. Safe, trusted, and campus-approved connections.</p>
+          </div>
+          
+          <div class="about-item">
+            <div class="about-icon">💰</div>
+            <h3>Cost Effective</h3>
+            <p>Share travel costs and make commuting more affordable. Save up to 70% on transportation while building meaningful connections with your peers.</p>
+          </div>
+          
+          <div class="about-item">
+            <div class="about-icon">🌱</div>
+            <h3>Eco-Friendly</h3>
+            <p>Reduce carbon footprint by sharing rides. Join the sustainable transportation movement and contribute to a greener campus environment.</p>
+          </div>
+          
+          <div class="about-item">
+            <div class="about-icon">💡</div>
+            <h3>Smart Technology</h3>
+            <p>AI-powered matching system, real-time tracking, and seamless booking experience designed specifically for modern students and staff.</p>
+          </div>
+          
+          <div class="about-item">
+            <div class="about-icon">📱</div>
+            <h3>Mobile Ready</h3>
+            <p>Access anywhere, anytime. Responsive design works perfectly on all your devices - phone, tablet, or desktop.</p>
+          </div>
+          
+          <div class="about-item">
+            <div class="about-icon">🚌</div>
+            <h3>Official Campus Shuttles</h3>
+            <p>Book official university shuttles alongside peer rides. Complete transportation solution with verified campus transportation options.</p>
+          </div>
+        </div>
+        
+        <div class="about-stats">
+          <div class="stat">
+            <span class="stat-number">500+</span>
+            <span class="stat-label">Active Users</span>
+          </div>
+          <div class="stat">
+            <span class="stat-number">1000+</span>
+            <span class="stat-label">Rides Completed</span>
+          </div>
+          <div class="stat">
+            <span class="stat-number">₹50,000+</span>
+            <span class="stat-label">Money Saved</span>
+          </div>
+          <div class="stat">
+            <span class="stat-number">24/7</span>
+            <span class="stat-label">Platform Access</span>
+          </div>
+        </div>
+        
+        <div class="about-cta">
+          <h3>Ready to Start Your Journey?</h3>
+          <p>Join thousands of Chitkara students and staff who trust Campus Carpool for their daily transportation needs.</p>
+          <div class="cta-buttons">
+            <a href="register.html" class="btn btn-primary">Join Now</a>
+            <a href="find-rides.html" class="btn btn-secondary">Explore Rides</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-main">
+        <div class="footer-section footer-brand">
+          <div class="footer-logo">
+            <img src="assets/cu_logo.png" alt="Chitkara University" width="40" height="40">
+            <div>
+              <h3>Campus Carpool</h3>
+              <p>Chitkara University</p>
+            </div>
+          </div>
+          <p class="footer-description">
+            Smart transportation solution connecting the Chitkara University community through secure ride-sharing and official campus shuttles.
+          </p>
+          <div class="footer-contact">
+            <p><strong>Chitkara University (Punjab)</strong></p>
+            <p>Chandigarh-Patiala National Highway</p>
+            <p>Punjab 140401</p>
+          </div>
+        </div>
+
+        <div class="footer-section">
+          <h4>Quick Links</h4>
+          <ul>
+            <li><a href="find-rides.html">Find Rides</a></li>
+            <li><a href="create-ride.html">Offer Ride</a></li>
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="register.html">Sign In</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section">
+          <h4>Support</h4>
+          <ul>
+            <li><a href="#" target="_blank" rel="noopener noreferrer">Help Center</a></li>
+            <li><a href="#" target="_blank" rel="noopener noreferrer">Safety Guidelines</a></li>
+            <li><a href="#" target="_blank" rel="noopener noreferrer">Community Rules</a></li>
+            <li><a href="#" target="_blank" rel="noopener noreferrer">Contact Support</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section">
+          <h4>University</h4>
+          <ul>
+            <li><a href="https://www.chitkara.edu.in" target="_blank" rel="noopener noreferrer">Chitkara University</a></li>
+            <li><a href="https://www.chitkara.edu.in/admissions/" target="_blank" rel="noopener noreferrer">Admissions</a></li>
+            <li><a href="https://www.chitkara.edu.in/student-portal/" target="_blank" rel="noopener noreferrer">Student Portal</a></li>
+            <li><a href="https://www.chitkara.edu.in/campus-life/" target="_blank" rel="noopener noreferrer">Campus Life</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div class="footer-legal">
+          <p>&copy; 2025 Campus Carpool Coordinator. All rights reserved.</p>
+          <div class="footer-links">
+            <a href="#" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+            <a href="#" target="_blank" rel="noopener noreferrer">Terms of Service</a>
+            <a href="#" target="_blank" rel="noopener noreferrer">Disclaimer</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
