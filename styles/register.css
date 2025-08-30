@@ -668,3 +668,168 @@ label.floating {
     max-width: 240px;
   }
 }
+
+/* Registration Page Animations */
+.register-animation-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.animated-car-small {
+  position: absolute;
+  width: 20px;
+  height: 12px;
+  background: linear-gradient(135deg, var(--cu-red), var(--cu-red-light));
+  border-radius: 3px 8px 8px 3px;
+  z-index: 1;
+}
+
+.car-1 {
+  top: 60%;
+  animation: carMoveSmall1 6s linear infinite;
+}
+
+.car-2 {
+  top: 40%;
+  animation: carMoveSmall2 8s linear infinite;
+  animation-delay: -2s;
+  background: linear-gradient(135deg, #4a90e2, #357abd);
+}
+
+.animated-car-small::before {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 3px;
+  width: 3px;
+  height: 3px;
+  background: #333;
+  border-radius: 50%;
+  box-shadow: 8px 0 0 #333;
+}
+
+.floating-element {
+  position: absolute;
+  font-size: 16px;
+  animation: floatRegister 4s ease-in-out infinite;
+  opacity: 0.7;
+}
+
+.element-1 {
+  top: 15%;
+  left: 80%;
+  animation-delay: 0s;
+}
+
+.element-2 {
+  top: 70%;
+  left: 85%;
+  animation-delay: -1s;
+}
+
+.element-3 {
+  top: 25%;
+  left: 10%;
+  animation-delay: -2s;
+}
+
+.element-4 {
+  top: 80%;
+  left: 15%;
+  animation-delay: -3s;
+}
+
+.form-card {
+  animation: slideInFromRight 0.8s ease-out;
+}
+
+.form-info .hero-card {
+  animation: slideInFromLeft 0.8s ease-out;
+}
+
+.form-group {
+  animation: fadeInUp 0.6s ease-out forwards;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.form-group:nth-child(1) { animation-delay: 0.1s; }
+.form-group:nth-child(2) { animation-delay: 0.2s; }
+.form-group:nth-child(3) { animation-delay: 0.3s; }
+.form-group:nth-child(4) { animation-delay: 0.4s; }
+.form-group:nth-child(5) { animation-delay: 0.5s; }
+
+.input:focus {
+  animation: inputFocus 0.3s ease-out;
+}
+
+/* Keyframe Animations */
+@keyframes carMoveSmall1 {
+  0% { left: -30px; }
+  100% { left: calc(100% + 30px); }
+}
+
+@keyframes carMoveSmall2 {
+  0% { left: calc(100% + 30px); }
+  100% { left: -30px; }
+}
+
+@keyframes floatRegister {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0.7;
+  }
+  25% {
+    transform: translateY(-10px) rotate(5deg);
+    opacity: 0.9;
+  }
+  50% {
+    transform: translateY(-5px) rotate(-3deg);
+    opacity: 0.6;
+  }
+  75% {
+    transform: translateY(-15px) rotate(3deg);
+    opacity: 0.8;
+  }
+}
+
+@keyframes slideInFromLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromRight {
+  0% {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes inputFocus {
+  0% {
+    box-shadow: 0 0 0 0 rgba(211, 11, 36, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(211, 11, 36, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(211, 11, 36, 0);
+  }
+}

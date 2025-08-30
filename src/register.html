@@ -105,9 +105,27 @@
           </ul>
 
           <div class="hero-illustration" aria-hidden="true">
-            <img src="../assets/car.png" alt="Campus carpool illustration" loading="lazy">
+            <div class="register-animation-container">
+              <!-- Moving cars on the road -->
+              <div class="animated-car-small car-1"></div>
+              <div class="animated-car-small car-2"></div>
+              
+              <!-- Floating elements -->
+              <div class="floating-element element-1">🚗</div>
+              <div class="floating-element element-2">🎓</div>
+              <div class="floating-element element-3">💰</div>
+              <div class="floating-element element-4">🌱</div>
+              
+              <img src="../assets/car.png" alt="Campus carpool illustration" loading="lazy">
+            </div>
             <svg class="road" viewBox="0 0 400 50" xmlns="http://www.w3.org/2000/svg">
               <path d="M0,20 Q200,60 400,20" stroke="#D30B24" stroke-width="4" fill="transparent" stroke-linecap="round" />
+              <circle class="road-dot" cx="50" cy="20" r="2" fill="#D30B24">
+                <animate attributeName="cx" values="50;350;50" dur="4s" repeatCount="indefinite"/>
+              </circle>
+              <circle class="road-dot" cx="150" cy="20" r="2" fill="#ff6b7a">
+                <animate attributeName="cx" values="150;50;350;150" dur="6s" repeatCount="indefinite"/>
+              </circle>
             </svg>
           </div>
         </div>

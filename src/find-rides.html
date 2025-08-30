@@ -100,6 +100,41 @@
       <div class="header-content">
         <h1>🔍 Find Rides</h1>
         <p>Search for available rides or create a ride request to find travel companions.</p>
+        
+        <!-- Animated Route Visualization -->
+        <div class="route-animation" aria-hidden="true">
+          <svg viewBox="0 0 300 100" class="route-svg">
+            <!-- Route path -->
+            <path d="M20,50 Q150,20 280,50" stroke="#D30B24" stroke-width="3" fill="none" stroke-dasharray="5,5">
+              <animate attributeName="stroke-dashoffset" values="0;-10" dur="1s" repeatCount="indefinite"/>
+            </path>
+            
+            <!-- Start point -->
+            <circle cx="20" cy="50" r="6" fill="#D30B24">
+              <animate attributeName="r" values="6;8;6" dur="2s" repeatCount="indefinite"/>
+            </circle>
+            <text x="20" y="70" text-anchor="middle" font-size="10" fill="#666">From</text>
+            
+            <!-- End point -->
+            <circle cx="280" cy="50" r="6" fill="#28a745">
+              <animate attributeName="r" values="6;8;6" dur="2s" repeatCount="indefinite" begin="1s"/>
+            </circle>
+            <text x="280" y="70" text-anchor="middle" font-size="10" fill="#666">To</text>
+            
+            <!-- Moving car -->
+            <g class="moving-car">
+              <rect x="-8" y="-4" width="16" height="8" rx="2" fill="#4a90e2"/>
+              <circle cx="-4" cy="2" r="1.5" fill="#333"/>
+              <circle cx="4" cy="2" r="1.5" fill="#333"/>
+              <animateMotion dur="3s" repeatCount="indefinite">
+                <mpath href="#route-path"/>
+              </animateMotion>
+            </g>
+            
+            <!-- Hidden path for animation -->
+            <path id="route-path" d="M20,50 Q150,20 280,50" stroke="none" fill="none"/>
+          </svg>
+        </div>
       </div>
     </section>
 

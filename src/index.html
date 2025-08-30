@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Campus Carpool Coordinator — Chitkara University</title>
   <meta name="description" content="Connect with peers, share rides, and join official shuttles at Chitkara University. Safe, secure, and sustainable campus transportation.">
-  <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="../styles/main.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
@@ -70,7 +70,7 @@
   <header class="header">
     <div class="container header-content">
       <a class="brand" href="#" aria-label="Campus Carpool Homepage">
-        <img src="assets/cu_logo.png" alt="Chitkara University Logo" width="48" height="48">
+        <img src="../assets/cu_logo.png" alt="Chitkara University Logo" width="48" height="48">
         <div>
           <h1>Campus Carpool</h1>
           <div>Chitkara University</div>
@@ -87,11 +87,11 @@
       
       <nav class="nav-actions" role="navigation" aria-label="Main navigation">
         <a class="btn btn-ghost" href="#about">About</a>
-        <a class="btn btn-ghost" href="src/find-rides.html">Find Rides</a>
-        <a class="btn btn-ghost" href="src/create-ride.html">Offer Ride</a>
-        <a class="btn btn-ghost" href="src/dashboard.html">Dashboard</a>
-        <a class="btn btn-secondary" href="src/register.html">Sign In</a>
-        <a class="btn btn-primary" href="src/register.html">Get Started</a>
+        <a class="btn btn-ghost" href="find-rides.html">Find Rides</a>
+        <a class="btn btn-ghost" href="create-ride.html">Offer Ride</a>
+        <a class="btn btn-ghost" href="dashboard.html">Dashboard</a>
+        <a class="btn btn-secondary" href="register.html">Sign In</a>
+        <a class="btn btn-primary" href="register.html">Get Started</a>
       </nav>
     </div>
   </header>
@@ -100,44 +100,22 @@
     <section class="hero" role="region" aria-labelledby="hero-heading">
       <div class="hero-card">
         <div class="hero-left" aria-hidden="true">
-          <img src="assets/cu_logo.png" alt="Chitkara University Emblem" width="48" height="48">
+          <img src="../assets/cu_logo.png" alt="Chitkara University Emblem" width="48" height="48">
         </div>
         <div class="hero-content">
           <h2 id="hero-heading">Smart Campus Transportation</h2>
           <p>Connect with peers, share rides, and access official campus shuttles. Your convenient and safe way to travel within and around Chitkara University.</p>
           <div class="hero-cta">
-            <a class="btn btn-primary" href="src/create-ride.html">🚗 Offer a Ride</a>
-            <a class="btn btn-secondary" href="src/find-rides.html">🔍 Find Rides</a>
+            <a class="btn btn-primary" href="create-ride.html">🚗 Offer a Ride</a>
+            <a class="btn btn-secondary" href="find-rides.html">🔍 Find Rides</a>
           </div>
         </div>
       </div>
       <div class="hero-illustration" aria-hidden="true">
-        <div class="animation-container">
-          <img src="assets/car.png" alt="Modern carpool illustration" loading="lazy" class="moving-car">
-          
-          <!-- Animated road with dashed lines -->
-          <svg class="road" viewBox="0 0 400 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <defs>
-              <pattern id="roadDashes" patternUnits="userSpaceOnUse" width="20" height="4">
-                <rect width="12" height="2" fill="#fff" opacity="0.8"/>
-              </pattern>
-            </defs>
-            <!-- Main road -->
-            <path d="M0,40 Q200,80 400,40" stroke="#E5E7EB" stroke-width="60" fill="transparent" stroke-linecap="round" opacity="0.3"/>
-            <!-- Road center line -->
-            <path d="M0,40 Q200,80 400,40" stroke="url(#roadDashes)" stroke-width="2" fill="transparent" stroke-linecap="round" class="dashed-line"/>
-            <!-- Red path for car movement -->
-            <path d="M0,40 Q200,80 400,40" stroke="#D30B24" stroke-width="3" fill="transparent" stroke-linecap="round" opacity="0.6" class="car-path"/>
-          </svg>
-          
-          <!-- Floating elements -->
-          <div class="floating-elements">
-            <div class="floating-icon floating-icon-1">🚗</div>
-            <div class="floating-icon floating-icon-2">👥</div>
-            <div class="floating-icon floating-icon-3">💰</div>
-            <div class="floating-icon floating-icon-4">🌍</div>
-          </div>
-        </div>
+        <img src="../assets/car.png" alt="Modern carpool illustration" loading="lazy">
+        <svg class="road" viewBox="0 0 400 50" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M0,20 Q200,60 400,20" stroke="#D30B24" stroke-width="4" fill="transparent" stroke-linecap="round" />
+        </svg>
       </div>
     </section>
 
@@ -145,20 +123,10 @@
       <h2 id="features-heading" class="sr-only">Platform Features</h2>
       
       <article class="feature">
-        <div class="feature-icon animated-icon" aria-hidden="true">
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <!-- Car body -->
-            <rect x="4" y="14" width="24" height="8" rx="2" fill="currentColor" class="car-body"/>
-            <!-- Wheels -->
-            <circle cx="10" cy="24" r="3" fill="currentColor" class="wheel wheel-1"/>
-            <circle cx="22" cy="24" r="3" fill="currentColor" class="wheel wheel-2"/>
-            <!-- Windows -->
-            <rect x="6" y="12" width="6" height="4" rx="1" fill="currentColor" opacity="0.7"/>
-            <rect x="14" y="12" width="6" height="4" rx="1" fill="currentColor" opacity="0.7"/>
-            <rect x="22" y="12" width="4" height="4" rx="1" fill="currentColor" opacity="0.7"/>
-            <!-- Headlights -->
-            <circle cx="28" cy="16" r="1" fill="#FFD700" class="headlight"/>
-            <circle cx="28" cy="20" r="1" fill="#FFD700" class="headlight"/>
+        <div class="feature-icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L3.09 8.26L12 14L20.91 8.26L12 2Z" fill="white"/>
+            <path d="M12 22L3.09 15.74L12 10L20.91 15.74L12 22Z" fill="white" opacity="0.7"/>
           </svg>
         </div>
         <h3>Offer Rides</h3>
@@ -166,15 +134,10 @@
       </article>
 
       <article class="feature">
-        <div class="feature-icon animated-icon" aria-hidden="true">
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <!-- Search circle -->
-            <circle cx="14" cy="14" r="9" stroke="currentColor" stroke-width="2" fill="none" class="search-circle"/>
-            <path d="21 21l4.35 4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="search-handle"/>
-            <!-- Location pins -->
-            <circle cx="10" cy="10" r="2" fill="#FF6B35" class="location-pin pin-1"/>
-            <circle cx="18" cy="12" r="2" fill="#D30B24" class="location-pin pin-2"/>
-            <circle cx="14" cy="18" r="2" fill="#10B981" class="location-pin pin-3"/>
+        <div class="feature-icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M21 16V8C21 6.9 20.1 6 19 6H5C3.9 6 3 6.9 3 8V16C3 17.1 3.9 18 5 18H19C20.1 18 21 17.1 21 16Z" fill="white"/>
+            <path d="M7 10H17V14H7V10Z" fill="white" opacity="0.7"/>
           </svg>
         </div>
         <h3>Smart Matching</h3>
@@ -182,18 +145,7 @@
       </article>
 
       <article class="feature">
-        <div class="feature-icon animated-icon" aria-hidden="true">
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <!-- Shield shape -->
-            <path d="M16 2L6 7V15C6 21.5 10.5 27.5 16 29C21.5 27.5 26 21.5 26 15V7L16 2Z" fill="currentColor" class="shield"/>
-            <!-- Checkmark -->
-            <path d="M12 16L15 19L20 12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="checkmark"/>
-            <!-- Security dots -->
-            <circle cx="16" cy="8" r="1" fill="white" opacity="0.8" class="security-dot dot-1"/>
-            <circle cx="12" cy="12" r="1" fill="white" opacity="0.6" class="security-dot dot-2"/>
-            <circle cx="20" cy="12" r="1" fill="white" opacity="0.6" class="security-dot dot-3"/>
-          </svg>
-        </div>
+        <div class="feature-icon" aria-hidden="true">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 2L13.09 8.26L22 9L13.09 15.74L12 22L10.91 15.74L2 9L10.91 8.26L12 2Z" fill="white"/>
           </svg>
@@ -269,8 +221,8 @@
           <h3>Ready to Start Your Journey?</h3>
           <p>Join thousands of Chitkara students and staff who trust Campus Carpool for their daily transportation needs.</p>
           <div class="cta-buttons">
-            <a href="src/register.html" class="btn btn-primary">Join Now</a>
-            <a href="src/find-rides.html" class="btn btn-secondary">Explore Rides</a>
+            <a href="register.html" class="btn btn-primary">Join Now</a>
+            <a href="find-rides.html" class="btn btn-secondary">Explore Rides</a>
           </div>
         </div>
       </div>
@@ -282,7 +234,7 @@
       <div class="footer-main">
         <div class="footer-section footer-brand">
           <div class="footer-logo">
-            <img src="assets/cu_logo.png" alt="Chitkara University" width="40" height="40">
+            <img src="../assets/cu_logo.png" alt="Chitkara University" width="40" height="40">
             <div>
               <h3>Campus Carpool</h3>
               <p>Chitkara University</p>
