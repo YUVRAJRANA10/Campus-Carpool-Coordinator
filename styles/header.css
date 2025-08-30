@@ -100,24 +100,6 @@
   letter-spacing: 0.05em;
 }
 
-.brand-title {
-  font-size: 1.5rem;
-  font-weight: 800;
-  margin: 0;
-  background: linear-gradient(135deg, var(--text-primary) 0%, var(--cu-red) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.brand-subtitle {
-  font-size: 0.8rem;
-  color: var(--cu-red);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
 .nav-actions {
   display: flex;
   gap: var(--spacing-sm);
@@ -179,24 +161,26 @@
     flex-wrap: wrap;
   }
   
-  /* Fix brand size on mobile */
+  /* Fix brand size on mobile - ensure consistency across all pages */
   .brand {
     gap: 8px;
   }
   
-  .brand h1, .brand-title {
-    font-size: 1.3rem;
+  .brand h1 {
+    font-size: 1.1rem !important;
     line-height: 1.2;
+    margin: 0;
+    font-weight: 700;
   }
   
-  .brand div:last-child, .brand-subtitle {
-    font-size: 0.75rem;
+  .brand div:last-child {
+    font-size: 0.7rem !important;
     line-height: 1.1;
   }
   
   .brand img {
-    width: 40px;
-    height: 40px;
+    width: 36px !important;
+    height: 36px !important;
   }
   
   .hamburger-icon {
@@ -207,18 +191,19 @@
     position: fixed;
     top: 0;
     right: -100%;
-    width: 280px;
+    width: 240px;
+    max-width: 80vw;
     height: 100vh;
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(20px) saturate(180%);
     border-left: 1px solid rgba(255, 255, 255, 0.3);
     flex-direction: column;
     justify-content: flex-start;
     align-items: stretch;
-    padding: 80px 24px 24px;
+    padding: 70px 20px 20px;
     gap: 12px;
     transition: right 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.1);
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.15);
     z-index: 101;
   }
   
@@ -254,7 +239,7 @@
     min-height: 48px !important;
   }
   
-  /* Add overlay when menu is open */
+  /* Add overlay when menu is open - better backdrop */
   .menu-toggle:checked ~ .nav-actions::before {
     content: '';
     position: fixed;
@@ -262,9 +247,14 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.4);
     z-index: -1;
     animation: fadeIn 0.3s ease;
+  }
+  
+  /* Ensure menu doesn't take full width */
+  .nav-actions {
+    max-width: 250px;
   }
 }
 
@@ -274,26 +264,29 @@
 }
 
 @media (max-width: 480px) {
-  /* Smaller brand on very small screens */
-  .brand h1, .brand-title {
-    font-size: 1.1rem;
+  /* Smaller brand on very small screens - consistent across all pages */
+  .brand h1 {
+    font-size: 1rem !important;
+    line-height: 1.1;
+    font-weight: 700;
   }
   
-  .brand div:last-child, .brand-subtitle {
-    font-size: 0.65rem;
+  .brand div:last-child {
+    font-size: 0.65rem !important;
+    line-height: 1;
   }
   
   .brand img {
-    width: 36px;
-    height: 36px;
+    width: 32px !important;
+    height: 32px !important;
   }
   
-  /* Full width mobile menu on small screens */
+  /* Smaller mobile menu on very small screens */
   .nav-actions {
-    width: 100%;
+    width: 200px;
     right: -100%;
-    padding: 70px 20px 20px;
-    gap: 10px;
+    padding: 60px 16px 16px;
+    gap: 8px;
   }
   
   /* Consistent smaller buttons for very small screens */

@@ -924,7 +924,6 @@ label.floating {
   .footer-links {
     justify-content: center;
   }
-}
 
 @media (max-width: 480px) {
   .hero-content h2 {
