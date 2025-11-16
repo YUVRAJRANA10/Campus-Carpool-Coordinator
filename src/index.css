@@ -55,6 +55,21 @@
   }
   
   .page-container {
-    @apply max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 relative z-10;
+    @apply max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 relative z-10 pt-8;
+  }
+
+  /* Sticky navbar styles */
+  .sticky-navbar {
+    @apply sticky top-0 z-50 bg-white/90 backdrop-blur-lg border-b border-white/30 shadow-lg transition-all duration-300;
+  }
+
+  /* Main content spacing to account for sticky navbar */
+  .main-content {
+    @apply pt-4;
+  }
+
+  /* Enhanced glass effect for sticky navbar */
+  .navbar-glass {
+    @apply bg-white/30 backdrop-blur-xl border border-white/50 rounded-xl shadow-xl;
   }
 }

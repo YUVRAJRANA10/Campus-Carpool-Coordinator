@@ -212,7 +212,7 @@ const CreateRide = () => {
           className="text-center mb-8"
         >
           <h1 className="text-4xl font-bold text-slate-800 mb-4">
-            🚗 Offer a Ride
+            + Offer a Ride
           </h1>
           <p className="text-xl text-slate-600 max-w-2xl mx-auto">
             Share your journey and help fellow students save money while reducing carbon footprint

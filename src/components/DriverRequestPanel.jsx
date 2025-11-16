@@ -38,7 +38,9 @@ const DriverRequestPanel = ({ bookingRequests, onAccept, onDecline, onGenerateCo
   if (!bookingRequests || bookingRequests.length === 0) {
     return (
       <div className="glass-card p-6 text-center">
-        <div className="text-6xl mb-4">🚗</div>
+        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Car className="w-8 h-8 text-blue-600" />
+        </div>
         <h3 className="text-xl font-semibold text-slate-800 mb-2">No Booking Requests</h3>
         <p className="text-slate-600">When passengers request to join your rides, they'll appear here.</p>
       </div>

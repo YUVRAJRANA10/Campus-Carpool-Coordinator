@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext'
-import { Eye, EyeOff, ArrowLeft, Mail, Lock, User, GraduationCap } from 'lucide-react'
+import { Eye, EyeOff, ArrowLeft, Mail, Lock, User, GraduationCap, Car } from 'lucide-react'
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true)
@@ -64,7 +64,7 @@ const AuthPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex pt-16">
       {/* Left Side - Info */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-cu-red to-cu-orange p-12 text-white relative overflow-hidden">
         <div className="absolute inset-0 bg-black/20" />
@@ -99,7 +99,9 @@ const AuthPage = () => {
                 <span>Secure verification with university email</span>
               </div>
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">🚗</div>
+                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                  <Car className="w-4 h-4 text-white" />
+                </div>
                 <span>Easy ride sharing and booking system</span>
               </div>
               <div className="flex items-center space-x-3">

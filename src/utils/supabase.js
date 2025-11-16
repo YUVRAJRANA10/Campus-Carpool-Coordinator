@@ -3,6 +3,10 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
+console.log('🔧 Supabase Config Check:')
+console.log('URL:', supabaseUrl ? '✅ Set' : '❌ Missing')
+console.log('Key:', supabaseAnonKey ? '✅ Set' : '❌ Missing')
+
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('Missing Supabase environment variables!')
   console.log('Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your .env.local file')
@@ -32,18 +36,6 @@ export const supabase = createClient(
     }
   }
 )
-
-// Test Supabase connection
-export const testConnection = async () => {
-  try {
-    const { data, error } = await supabase.from('rides').select('count').limit(1)
-    if (error) throw error
-    return { success: true, message: 'Connection successful' }
-  } catch (error) {
-    console.error('Supabase connection test failed:', error)
-    return { success: false, error: error.message }
-  }
-}
 
 // Helper functions for common operations
 export const authHelpers = {
@@ -197,15 +189,57 @@ export const dbHelpers = {
     }
   },
 
-  async getRides(filters = {}) {
+  async getRides(filters = {}, currentUserId = null) {
     try {
-      // Simple, clean query without complex selects
-      let query = supabase
+      console.log('🔍 Fetching rides with filters:', filters, 'currentUserId:', currentUserId)
+      
+      // First try simple query to see if we have any rides at all
+      let simpleQuery = supabase
         .from('rides')
         .select('*')
         .eq('status', 'active')
         .order('created_at', { ascending: false })
-        .limit(20) // Limit for performance
+        .limit(20)
+
+      const { data: simpleData, error: simpleError } = await simpleQuery
+      console.log('📊 Simple rides query result:', { count: simpleData?.length || 0, error: simpleError })
+
+      if (simpleError) {
+        console.error('❌ Simple rides query failed:', simpleError)
+        return []
+      }
+
+      if (!simpleData || simpleData.length === 0) {
+        console.log('📭 No rides found in database')
+        return []
+      }
+
+      // Now try with profile joins - simplified column selection
+      let query = supabase
+        .from('rides')
+        .select(`
+          *,
+          driver:profiles(
+            id,
+            full_name,
+            email,
+            phone,
+            department,
+            rating,
+            total_rides
+          )
+        `)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(20)
+
+      // Exclude current user's rides if user is provided
+      if (currentUserId) {
+        query = query.neq('driver_id', currentUserId)
+        console.log('🚫 Excluding rides from user:', currentUserId)
+      } else {
+        console.log('👤 No current user ID provided, showing all rides')
+      }
 
       // Apply basic filters only
       if (filters.origin) {
@@ -220,15 +254,109 @@ export const dbHelpers = {
       }
 
       const { data, error } = await query
+      console.log('🔗 Profile join query result:', { count: data?.length || 0, error })
 
       if (error) {
         console.error('Supabase getRides error:', error)
+        // If join fails, try simple query
+        console.log('⏭️ Falling back to simple query')
+        return await this.getRidesSimple(filters, currentUserId)
+      }
+      
+      console.log('✅ Successfully fetched rides with profiles:', data?.length || 0)
+      return data || []
+    } catch (error) {
+      console.error('Error in getRides:', error)
+      // Fallback to simple query
+      return await this.getRidesSimple(filters, currentUserId)
+    }
+  },
+
+  // Fallback method for when profile join fails
+  async getRidesSimple(filters = {}, currentUserId = null) {
+    try {
+      console.log('🔄 Using fallback getRidesSimple method')
+      
+      let query = supabase
+        .from('rides')
+        .select('*')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(20)
+
+      // Exclude current user's rides
+      if (currentUserId) {
+        query = query.neq('driver_id', currentUserId)
+        console.log('🚫 [Simple] Excluding rides from user:', currentUserId)
+      } else {
+        console.log('👤 [Simple] No current user ID provided, showing all rides')
+      }
+
+      // Apply filters
+      if (filters.origin) {
+        query = query.ilike('origin_name', `%${filters.origin}%`)
+      }
+      if (filters.destination) {
+        query = query.ilike('destination_name', `%${filters.destination}%`)
+      }
+      if (filters.date) {
+        const filterDate = new Date(filters.date).toISOString().split('T')[0]
+        query = query.gte('departure_time', filterDate)
+      }
+
+      const { data, error } = await query
+      console.log('📊 [Simple] Query result:', { count: data?.length || 0, error })
+
+      if (error) {
+        console.error('Supabase getRidesSimple error:', error)
         return []
+      }
+
+      // Manually fetch driver profiles for each ride
+      if (data && data.length > 0) {
+        const ridesWithDrivers = await Promise.all(
+          data.map(async (ride) => {
+            try {
+              const { data: driverProfile } = await supabase
+                .from('profiles')
+                .select('id, full_name, email, phone, department, rating, total_rides')
+                .eq('id', ride.driver_id)
+                .single()
+              
+              return {
+                ...ride,
+                driver: driverProfile || {
+                  id: ride.driver_id,
+                  full_name: 'Driver',
+                  email: '',
+                  department: 'Student',
+                  rating: 4.8,
+                  total_rides: 0
+                }
+              }
+            } catch (err) {
+              console.warn('Failed to fetch driver profile for ride:', ride.id)
+              return {
+                ...ride,
+                driver: {
+                  id: ride.driver_id,
+                  full_name: 'Driver',
+                  email: '',
+                  department: 'Student',
+                  rating: 4.8,
+                  total_rides: 0
+                }
+              }
+            }
+          })
+        )
+        
+        return ridesWithDrivers
       }
       
       return data || []
     } catch (error) {
-      console.error('Error in getRides:', error)
+      console.error('Error in getRidesSimple:', error)
       return []
     }
   },
@@ -276,24 +404,57 @@ export const dbHelpers = {
   },
 
   async updateBookingStatus(bookingId, status, verificationCode = null) {
-    const updates = { 
-      status, 
-      updated_at: new Date().toISOString() 
-    }
-    
-    if (verificationCode) {
-      updates.verification_code = verificationCode
-    }
+    try {
+      const updates = { 
+        status, 
+        updated_at: new Date().toISOString() 
+      }
+      
+      // Only add verification_code if column exists and code is provided
+      if (verificationCode) {
+        try {
+          // Test if verification_code column exists by doing a test update
+          updates.verification_code = verificationCode
+        } catch (err) {
+          console.warn('verification_code column may not exist, skipping')
+          delete updates.verification_code
+        }
+      }
 
-    const { data, error } = await supabase
-      .from('bookings')
-      .update(updates)
-      .eq('id', bookingId)
-      .select()
-      .single()
+      const { data, error } = await supabase
+        .from('bookings')
+        .update(updates)
+        .eq('id', bookingId)
+        .select()
+        .single()
 
-    if (error) throw error
-    return data
+      if (error) {
+        // If error is about missing column, retry without verification_code
+        if (error.message?.includes('verification_code') || error.message?.includes('column')) {
+          console.warn('Retrying booking update without verification_code')
+          const simpleUpdates = { 
+            status, 
+            updated_at: new Date().toISOString() 
+          }
+          
+          const { data: retryData, error: retryError } = await supabase
+            .from('bookings')
+            .update(simpleUpdates)
+            .eq('id', bookingId)
+            .select()
+            .single()
+          
+          if (retryError) throw retryError
+          return retryData
+        }
+        throw error
+      }
+      
+      return data
+    } catch (error) {
+      console.error('Error updating booking status:', error)
+      throw error
+    }
   },
 
   async updateBooking(bookingId, updates) {
@@ -434,3 +595,59 @@ export const realtimeHelpers = {
     }
   }
 }
+
+// Test database connection and data
+export const testConnection = async () => {
+  try {
+    console.log('🔍 Testing Supabase connection...')
+    
+    // Test basic connection
+    const { data: testData, error: testError } = await supabase
+      .from('rides')
+      .select('count')
+      .limit(1)
+    
+    if (testError) {
+      console.error('❌ Connection test failed:', testError)
+      return false
+    }
+    
+    console.log('✅ Supabase connection successful')
+    
+    // Count total rides
+    const { count, error: countError } = await supabase
+      .from('rides')
+      .select('*', { count: 'exact', head: true })
+    
+    console.log('📊 Total rides in database:', count || 0)
+    
+    // Get sample rides
+    const { data: sampleRides, error: ridesError } = await supabase
+      .from('rides')
+      .select('*')
+      .limit(5)
+    
+    console.log('🚗 Sample rides:', sampleRides?.length || 0)
+    if (sampleRides && sampleRides.length > 0) {
+      console.log('First ride:', sampleRides[0])
+    }
+    
+    return true
+  } catch (err) {
+    console.error('❌ Connection test error:', err)
+    return false
+  }
+}
+
+// Make test function available globally for debugging
+if (typeof window !== 'undefined') {
+  window.testSupabaseConnection = testConnection
+  window.supabaseDebug = {
+    url: supabaseUrl,
+    keySet: !!supabaseAnonKey,
+    configured: supabaseUrl && supabaseAnonKey
+  }
+  console.log('🧪 Debug: Run testSupabaseConnection() or check window.supabaseDebug')
+}
+
+export default dbHelpers

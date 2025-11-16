@@ -1,4 +1,4 @@
-import React, { useState, useMemo, Suspense } from 'react'
+import React, { useState, useMemo, Suspense, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -6,6 +6,9 @@ import { useRides } from '../contexts/ProductionRideContext'
 import { usePerformance, withPerformanceTracking } from '../contexts/PerformanceContext'
 import Navbar from '../components/Navbar'
 import DriverDashboard from '../components/DriverDashboard'
+import LiveRideTracker from '../components/LiveRideTracker'
+import RideCompletionModal from '../components/RideCompletionModal'
+import DebugPanel from '../components/DebugPanel'
 import { 
   Car, 
   Calendar, 
@@ -206,10 +209,39 @@ const OptimizedDashboardSimple = () => {
     respondToBookingRequest, 
     generateVerificationCode,
     getBookingRequests,
-    isSupabaseConfigured
+    isSupabaseConfigured,
+    activeLiveRide,
+    showLiveTracker,
+    showCompletionModal,
+    getActiveLiveRide,
+    updateLiveRideStatus,
+    completeLiveRide,
+    submitReview,
+    stopLiveTracking,
+    startLiveTracking,
+    addNotification
   } = useRides()
   const { trackPageLoad, isLoading } = usePerformance()
   const [activeTab, setActiveTab] = useState('overview')
+
+  // Check for active live ride on component mount
+  useEffect(() => {
+    const checkActiveLiveRide = async () => {
+      try {
+        const liveRide = await getActiveLiveRide()
+        if (liveRide) {
+          // Automatically show live tracker if there's an active ride
+          startLiveTracking(liveRide)
+        }
+      } catch (error) {
+        console.error('Error checking active live ride:', error)
+      }
+    }
+
+    if (user) {
+      checkActiveLiveRide()
+    }
+  }, [user])
 
   // Track page load performance
   React.useEffect(() => {
@@ -256,6 +288,44 @@ const OptimizedDashboardSimple = () => {
       change: '+0.2 this week'
     }
   ], [myRides, stats])
+
+  // Live ride handlers
+  const handleLiveRideStatusUpdate = async (newStatus) => {
+    try {
+      await updateLiveRideStatus(activeLiveRide.id, newStatus)
+      addNotification(`✅ Status updated to ${newStatus.replace('_', ' ')}`, 'success')
+    } catch (error) {
+      console.error('Error updating live ride status:', error)
+      addNotification('Failed to update status', 'error')
+    }
+  }
+
+  const handleCompleteLiveRide = async () => {
+    try {
+      await completeLiveRide(activeLiveRide.id)
+    } catch (error) {
+      console.error('Error completing live ride:', error)
+    }
+  }
+
+  const handleSubmitReview = async (reviewData) => {
+    try {
+      await submitReview(reviewData)
+    } catch (error) {
+      console.error('Error submitting review:', error)
+    }
+  }
+
+  const handleSkipReview = () => {
+    // setShowCompletionModal(false)  // Remove this line since state is managed in context
+    // setActiveLiveRide(null)        // Remove this line since state is managed in context
+    addNotification('Review skipped', 'info')
+  }
+
+  const getUserType = () => {
+    if (!activeLiveRide || !user) return null
+    return activeLiveRide.driver_id === user.id ? 'driver' : 'passenger'
+  }
 
   const recentActivities = useMemo(() => {
     const activities = []
@@ -304,7 +374,7 @@ const OptimizedDashboardSimple = () => {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="page-container py-8">
         {/* Real-time Driver Dashboard */}
         {isSupabaseConfigured() && (
           <motion.div
@@ -552,6 +622,30 @@ const OptimizedDashboardSimple = () => {
           )}
         </div>
       </div>
+
+      {/* Live Ride Tracker Modal */}
+      {showLiveTracker && activeLiveRide && (
+        <LiveRideTracker
+          liveRide={activeLiveRide}
+          userType={getUserType()}
+          onUpdateStatus={handleLiveRideStatusUpdate}
+          onCompleteRide={handleCompleteLiveRide}
+        />
+      )}
+
+      {/* Ride Completion Modal */}
+      {showCompletionModal && activeLiveRide && (
+        <RideCompletionModal
+          liveRide={activeLiveRide}
+          userType={getUserType()}
+          onSubmitReview={handleSubmitReview}
+          onSkipReview={handleSkipReview}
+          onClose={() => setShowCompletionModal(false)}
+        />
+      )}
+
+      {/* Debug Panel for Development */}
+      <DebugPanel />
     </div>
   )
 }

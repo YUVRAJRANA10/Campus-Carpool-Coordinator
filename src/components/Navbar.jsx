@@ -49,19 +49,21 @@ const Navbar = () => {
   const showConfigWarning = user && !isSupabaseConfigured()
 
   return (
-    <nav className="relative z-50">
+    <nav className="sticky-navbar">
       {/* Configuration Warning Banner */}
       {showConfigWarning && (
-        <div className="mx-4 mt-4 mb-2 bg-amber-100 border border-amber-200 rounded-lg p-3">
-          <div className="flex items-center justify-center space-x-2 text-amber-800">
-            <span className="text-sm font-medium">
-              ⚠️ Setup Required: Configure your Supabase database for full real-time functionality!
-            </span>
+        <div className="mx-4 pt-4 pb-2">
+          <div className="bg-amber-100 border border-amber-200 rounded-lg p-3">
+            <div className="flex items-center justify-center space-x-2 text-amber-800">
+              <span className="text-sm font-medium">
+                ⚠️ Setup Required: Configure your Supabase database for full real-time functionality!
+              </span>
+            </div>
           </div>
         </div>
       )}
 
-      <div className="glass-card mx-4 mt-4 mb-8">
+      <div className="navbar-glass mx-4 my-2">
         <div className="page-container">
           <div className="flex justify-between items-center py-4">
             {/* Logo */}

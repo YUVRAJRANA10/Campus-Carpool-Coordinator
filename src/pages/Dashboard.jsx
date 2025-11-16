@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useRides } from '../contexts/ProductionRideContext'
 import Navbar from '../components/Navbar'
 import DriverRequestPanel from '../components/DriverRequestPanel'
+import BookingStatusCard from '../components/BookingStatusCard'
 import { 
   Car, 
   Calendar, 
@@ -547,14 +548,27 @@ const Dashboard = () => {
                     Book New Ride
                   </Link>
                 </div>
-                {/* Bookings list content would go here */}
-                <div className="text-center py-8 text-slate-500">
-                  <Calendar size={48} className="mx-auto mb-4 opacity-50" />
-                  <p className="mb-4">Your booked rides will appear here</p>
-                  <Link to="/rides/find" className="btn-secondary">
-                    Find Rides to Book
-                  </Link>
-                </div>
+                
+                {/* Show booking status cards */}
+                {myBookings && myBookings.length > 0 ? (
+                  <div className="space-y-4">
+                    {myBookings.map(booking => (
+                      <BookingStatusCard 
+                        key={booking.id} 
+                        booking={booking} 
+                        type="passenger" 
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-slate-500">
+                    <Calendar size={48} className="mx-auto mb-4 opacity-50" />
+                    <p className="mb-4">No bookings yet</p>
+                    <Link to="/rides/find" className="btn-secondary">
+                      Find Your First Ride
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
             {activeTab === 'requests' && (

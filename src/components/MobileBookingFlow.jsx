@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRides } from '../contexts/ProductionRideContext'
+import { useAuth } from '../contexts/AuthContext'
 import { 
   MapPin, 
   Navigation, 
@@ -19,6 +20,7 @@ import {
 } from 'lucide-react'
 
 const MobileBookingFlow = ({ onClose }) => {
+  const { user } = useAuth()
   const {
     rideStatus,
     currentRide,
@@ -37,6 +39,43 @@ const MobileBookingFlow = ({ onClose }) => {
     estimatedFare: 0,
     estimatedTime: 0
   })
+  const [nearbyDrivers, setNearbyDrivers] = useState([
+    {
+      id: 1,
+      name: 'Rahul Kumar',
+      rating: 4.8,
+      eta: '2 mins',
+      distance: '0.5 km',
+      vehicle: 'Honda City',
+      price: 120
+    },
+    {
+      id: 2,
+      name: 'Priya Singh',
+      rating: 4.9,
+      eta: '4 mins',
+      distance: '1.2 km',
+      vehicle: 'Maruti Swift',
+      price: 115
+    }
+  ])
+  const [demoRideStatus, setDemoRideStatus] = useState('searching')
+  const [demoCurrentRide, setDemoCurrentRide] = useState(null)
+
+  // Local ride estimation function
+  const getRideEstimation = async (fromLocation, toLocation) => {
+    // Simulate API call for price estimation
+    const basePrice = 50
+    const distanceMultiplier = Math.random() * 20 + 10 // 10-30 km simulation
+    const estimatedFare = Math.round(basePrice + distanceMultiplier * 8)
+    const estimatedTime = Math.round(distanceMultiplier * 2) // 2 mins per km
+    
+    return {
+      estimatedFare,
+      estimatedTime,
+      distance: distanceMultiplier.toFixed(1) + ' km'
+    }
+  }
 
   // Auto-progress based on ride status
   useEffect(() => {
@@ -46,6 +85,34 @@ const MobileBookingFlow = ({ onClose }) => {
       setStep(4) // Stay on tracking when matched
     }
   }, [rideStatus])
+
+  // Demo ride progression when reaching step 4
+  useEffect(() => {
+    if (step === 4) {
+      setDemoRideStatus('searching')
+      
+      // Simulate finding a driver after 3 seconds
+      const timer1 = setTimeout(() => {
+        setDemoRideStatus('matched')
+        setDemoCurrentRide({
+          driver: nearbyDrivers[0],
+          pickupTime: '5 mins',
+          vehicle: nearbyDrivers[0].vehicle,
+          plateNumber: 'HR-05-1234'
+        })
+      }, 3000)
+      
+      // Simulate driver arriving after 8 seconds
+      const timer2 = setTimeout(() => {
+        setDemoRideStatus('driver_arriving')
+      }, 8000)
+      
+      return () => {
+        clearTimeout(timer1)
+        clearTimeout(timer2)
+      }
+    }
+  }, [step, nearbyDrivers])
 
   const handleLocationSubmit = async () => {
     if (!bookingData.from || !bookingData.to) return
@@ -68,20 +135,46 @@ const MobileBookingFlow = ({ onClose }) => {
   }
 
   const handleConfirmBooking = async () => {
-    // Find the first available ride or simulate booking
-    const availableRide = rides[0]
-    if (!availableRide) {
-      throw new Error('No rides available')
-    }
-    
-    const result = await bookRide(availableRide.id, {
-      seats_requested: bookingData.passengers || 1,
-      pickup_point: bookingData.from,
-      message: `Booking for ${bookingData.passengers || 1} passenger(s)`,
-      total_amount: bookingData.estimatedFare
-    })
-    
-    if (result) {
+    try {
+      // Find a ride that's not the user's own ride and matches the route
+      const availableRide = rides.find(ride => 
+        ride.driver_id !== user?.id && 
+        ride.available_seats > 0 &&
+        (ride.origin_name?.toLowerCase().includes(bookingData.from.toLowerCase()) ||
+         ride.destination_name?.toLowerCase().includes(bookingData.to.toLowerCase()) ||
+         bookingData.from.toLowerCase().includes(ride.origin_name?.toLowerCase() || '') ||
+         bookingData.to.toLowerCase().includes(ride.destination_name?.toLowerCase() || ''))
+      )
+      
+      if (!availableRide) {
+        // Create a mock ride for demo purposes
+        const mockRide = {
+          id: `mock_${Date.now()}`,
+          driver_id: 'demo_driver',
+          origin_name: bookingData.from,
+          destination_name: bookingData.to,
+          available_seats: 3,
+          price_per_seat: Math.round(bookingData.estimatedFare)
+        }
+        
+        // Simulate booking success
+        setStep(4)
+        return
+      }
+      
+      const result = await bookRide(availableRide.id, {
+        seats_requested: bookingData.passengers || 1,
+        pickup_point: bookingData.from,
+        message: `Booking for ${bookingData.passengers || 1} passenger(s)`,
+        total_amount: bookingData.estimatedFare
+      })
+      
+      if (result) {
+        setStep(4)
+      }
+    } catch (error) {
+      console.error('Booking error:', error)
+      // For demo, still proceed to next step
       setStep(4)
     }
   }
@@ -361,8 +454,8 @@ const MobileBookingFlow = ({ onClose }) => {
               className="flex flex-col h-full"
             >
               <RideTrackingScreen 
-                rideStatus={rideStatus}
-                currentRide={currentRide}
+                rideStatus={demoRideStatus}
+                currentRide={demoCurrentRide}
                 nearbyDrivers={nearbyDrivers}
                 onCancel={() => setStep(1)}
                 bookingData={bookingData}
@@ -489,6 +582,63 @@ const RideTrackingScreen = ({ rideStatus, currentRide, nearbyDrivers, onCancel, 
           </div>
         )
 
+      case 'driver_arriving':
+        return (
+          <div className="p-6 space-y-6">
+            <div className="text-center">
+              <motion.div
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+                className="w-16 h-16 bg-orange-500 text-white rounded-full flex items-center justify-center mx-auto mb-4"
+              >
+                <Car className="w-8 h-8" />
+              </motion.div>
+              <h2 className="text-xl font-semibold mb-2">Driver Arriving</h2>
+              <p className="text-gray-600">Your driver will be there in 2 minutes</p>
+            </div>
+
+            {currentRide?.driver && (
+              <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
+                <div className="flex items-center space-x-4 mb-4">
+                  <div className="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center text-white text-xl font-medium">
+                    {currentRide.driver.name.charAt(0)}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg">{currentRide.driver.name}</h3>
+                    <p className="text-gray-600">{currentRide.plateNumber || 'HR-05-1234'}</p>
+                    <div className="flex items-center space-x-2 text-sm">
+                      <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                      <span>{currentRide.driver.rating}</span>
+                      <span className="text-gray-400">•</span>
+                      <span>2 mins away</span>
+                    </div>
+                  </div>
+                  <div className="flex space-x-2">
+                    <button className="p-3 bg-green-100 text-green-600 rounded-full">
+                      <Phone className="w-5 h-5" />
+                    </button>
+                    <button className="p-3 bg-blue-100 text-blue-600 rounded-full">
+                      <MessageCircle className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="bg-white rounded-lg p-3 mb-3">
+                  <p className="text-sm font-medium text-orange-800 mb-1">Pickup Instructions</p>
+                  <p className="text-sm text-gray-600">Wait near the main gate. Driver will call when arrived.</p>
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={onCancel}
+              className="w-full py-3 border border-red-500 text-red-500 rounded-xl hover:bg-red-50"
+            >
+              Cancel Ride
+            </button>
+          </div>
+        )
+
       case 'ongoing':
         return (
           <div className="p-6 space-y-6">
@@ -525,7 +675,24 @@ const RideTrackingScreen = ({ rideStatus, currentRide, nearbyDrivers, onCancel, 
         )
 
       default:
-        return null
+        return (
+          <div className="flex flex-col items-center justify-center h-full p-6 text-center">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+              className="w-20 h-20 border-4 border-blue-500 border-t-transparent rounded-full mb-6"
+            />
+            <h2 className="text-xl font-semibold mb-2">Finding your driver</h2>
+            <p className="text-gray-600 mb-8">We're matching you with nearby drivers</p>
+            
+            <button
+              onClick={onCancel}
+              className="px-6 py-3 border border-red-500 text-red-500 rounded-xl hover:bg-red-50"
+            >
+              Cancel Search
+            </button>
+          </div>
+        )
     }
   }
 

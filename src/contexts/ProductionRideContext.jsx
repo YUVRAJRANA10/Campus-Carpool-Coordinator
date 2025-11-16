@@ -23,6 +23,9 @@ export const ProductionRideProvider = ({ children }) => {
   const [loading, setLoading] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
   const [loadingOperation, setLoadingOperation] = useState(null)
+  const [activeLiveRide, setActiveLiveRide] = useState(null)
+  const [showLiveTracker, setShowLiveTracker] = useState(false)
+  const [showCompletionModal, setShowCompletionModal] = useState(false)
   const [filters, setFilters] = useState({
     origin: '',
     destination: '',
@@ -163,12 +166,33 @@ export const ProductionRideProvider = ({ children }) => {
         throw new Error('Ride not found')
       }
 
+      // Prevent self-booking - Critical business logic
+      if (ride.driver_id === user.id) {
+        addNotification('❌ You cannot book your own ride!', 'error')
+        throw new Error('Cannot book your own ride')
+      }
+
+      // Check if user has already booked this ride
+      const existingBooking = myBookings.find(booking => 
+        booking.ride_id === rideId && booking.passenger_id === user.id
+      )
+      if (existingBooking) {
+        addNotification('ℹ️ You have already booked this ride!', 'info')
+        throw new Error('You have already booked this ride')
+      }
+
+      // Check available seats
+      if (ride.available_seats < (bookingData.seats_requested || 1)) {
+        addNotification('❌ Not enough seats available!', 'error')
+        throw new Error('Not enough seats available')
+      }
+
       const bookingWithUser = {
-        ...bookingData,
         ride_id: rideId,
         passenger_id: user.id,
-        passenger_name: user.user_metadata?.full_name || user.email.split('@')[0],
-        passenger_phone: user.user_metadata?.phone || '+91-9876543214',
+        seats_booked: bookingData.seats_requested || 1,
+        total_amount: (bookingData.seats_requested || 1) * ride.price_per_seat,
+        pickup_location: bookingData.pickup_location || ride.origin_name,
         status: 'pending',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -193,12 +217,12 @@ export const ProductionRideProvider = ({ children }) => {
       await createNotification({
         user_id: ride.driver_id,
         title: '🔔 New Booking Request!',
-        message: `${bookingWithUser.passenger_name} wants to book ${bookingData.seats_requested} seat(s) for your ride`,
-        type: 'booking_request',
+        message: `Someone wants to book ${bookingData.seats_requested || 1} seat(s) for your ride`,
+        type: 'booking',
         data: { 
           booking_id: savedBooking.id,
           ride_id: rideId,
-          passenger_name: bookingWithUser.passenger_name
+          passenger_id: user.id
         }
       })
 
@@ -211,57 +235,107 @@ export const ProductionRideProvider = ({ children }) => {
       // Remove optimistic update on error
       setMyBookings(prev => prev.filter(booking => !booking.id.toString().startsWith('temp_')))
       
-      addNotification(`Failed to book ride: ${error.message}`, 'error')
+      // Handle specific error types
+      if (error.code === '23505' || error.message.includes('unique constraint')) {
+        addNotification('ℹ️ You have already booked this ride!', 'info')
+      } else if (error.message.includes('Cannot book your own ride')) {
+        // Already handled above
+      } else if (error.message.includes('already booked')) {
+        // Already handled above  
+      } else {
+        addNotification(`Failed to book ride: ${error.message}`, 'error')
+      }
       throw error
     } finally {
       setLoading(false)
     }
   }
 
-  // Real-time booking response with instant passenger notification
+  // Enhanced booking response with simplified verification
   const respondToBookingRequest = async (bookingId, response, verificationCode = null) => {
     setLoading(true)
     try {
+      console.log('🎯 Responding to booking:', { bookingId, response })
+      
       // Find booking request
       const booking = bookingRequests.find(b => b.id === bookingId)
       if (!booking) {
         throw new Error('Booking request not found')
       }
 
-      const updatedStatus = response === 'accept' ? 'confirmed' : 'declined'
+      const updatedStatus = response === 'accept' ? 'confirmed' : 'cancelled'
       
-      // Production mode - update in Supabase
-      const updatedBooking = await dbHelpers.updateBookingStatus(
-        bookingId, 
-        updatedStatus, 
-        verificationCode
-      )
+      // Generate simple verification code for confirmed bookings
+      if (response === 'accept' && !verificationCode) {
+        verificationCode = Math.floor(1000 + Math.random() * 9000).toString()
+      }
+      
+      // Use the safe database function to handle the booking response
+      const { data: functionResult, error: functionError } = await supabase.rpc('safe_respond_to_booking', {
+        p_booking_id: bookingId,
+        p_response: response,
+        p_verification_code: verificationCode
+      })
 
-      // Update local state
-      setBookingRequests(prev => 
-        prev.filter(req => req.id !== bookingId)
-      )
+      if (functionError) {
+        console.error('Database function error:', functionError)
+        // Fallback to direct update if function doesn't exist
+        const { data: updatedBooking, error: updateError } = await supabase
+          .from('bookings')
+          .update({
+            status: updatedStatus,
+            verification_code: response === 'accept' ? verificationCode : null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', bookingId)
+          .select('*')
+          .single()
 
-      // Notify passenger instantly
+        if (updateError) {
+          throw new Error(`Failed to update booking: ${updateError.message}`)
+        }
+      } else {
+        // Check if the database function succeeded
+        if (!functionResult || !functionResult.success) {
+          throw new Error(functionResult?.error || 'Failed to process booking response')
+        }
+      }
+
+      // Update local state - remove from pending requests
+      setBookingRequests(prev => prev.filter(req => req.id !== bookingId))
+
+      // Notify passenger about decision
       await createNotification({
         user_id: booking.passenger_id,
         title: response === 'accept' ? '✅ Booking Confirmed!' : '❌ Booking Declined',
         message: response === 'accept' 
-          ? `Your booking has been confirmed! Verification code: ${verificationCode}`
+          ? `Your booking has been confirmed! Verification code: ${verificationCode}. Show this to the driver.`
           : `Your booking request was declined by the driver.`,
-        type: response === 'accept' ? 'booking_confirmed' : 'booking_declined',
+        type: 'booking',
         data: { 
           booking_id: bookingId,
-          verification_code: verificationCode
+          verification_code: verificationCode,
+          ride_id: booking.ride_id
         }
       })
 
+      // If booking is accepted, try to create live ride entry for tracking
+      if (response === 'accept') {
+        try {
+          await createLiveRide(booking.ride_id, bookingId, verificationCode)
+        } catch (liveRideError) {
+          console.warn('Live ride creation failed, but booking is confirmed:', liveRideError.message)
+        }
+      }
+
+      // Show success notification to driver
       const message = response === 'accept' 
-        ? `✅ Booking confirmed and passenger notified!`
-        : '❌ Booking request declined'
+        ? `✅ Booking confirmed! Verification code: ${verificationCode}`
+        : '✅ Booking declined successfully'
       addNotification(message, response === 'accept' ? 'success' : 'warning')
-      
-      return { success: true }
+        
+      console.log('✅ Booking response completed successfully')
+      return { success: true, verificationCode }
 
     } catch (error) {
       console.error('Error responding to booking:', error)
@@ -270,9 +344,7 @@ export const ProductionRideProvider = ({ children }) => {
     } finally {
       setLoading(false)
     }
-  }
-
-  // Load all rides with proper state management
+  }  // Load all rides with proper state management
   const loadRides = async (applyFilters = true) => {
     // Prevent concurrent operations of the same type
     if (loadingOperation === 'loadRides') {
@@ -299,7 +371,8 @@ export const ProductionRideProvider = ({ children }) => {
         date: filters.date
       } : {}
 
-      const fetchedRides = await dbHelpers.getRides(filterOptions)
+      // Temporarily disable user filtering to debug
+      const fetchedRides = await dbHelpers.getRides(filterOptions) // Removed user?.id
       
       if (fetchedRides) {
         setRides(fetchedRides)
@@ -325,16 +398,82 @@ export const ProductionRideProvider = ({ children }) => {
     if (!user) return
 
     try {
-      const [driverRides, passengerBookings] = await Promise.all([
+      const [driverRides, passengerBookings, incomingRequests] = await Promise.all([
         dbHelpers.getUserRides(user.id, 'driver'),
-        dbHelpers.getUserRides(user.id, 'passenger')
+        dbHelpers.getUserRides(user.id, 'passenger'),
+        loadBookingRequests()
       ])
 
       setMyRides(driverRides)
       setMyBookings(passengerBookings)
+      console.log('📊 Loaded:', {
+        myRides: driverRides.length,
+        myBookings: passengerBookings.length,
+        bookingRequests: incomingRequests.length
+      })
     } catch (error) {
       console.error('Error loading user rides:', error)
       addNotification('Failed to load your rides', 'error')
+    }
+  }
+
+  // Load booking requests for driver dashboard
+  const loadBookingRequests = async () => {
+    if (!user) return []
+
+    try {
+      console.log('🔍 Loading booking requests for driver:', user.id)
+      
+      // First get rides owned by this user, then get their bookings
+      const { data: myRides, error: ridesError } = await supabase
+        .from('rides')
+        .select('id')
+        .eq('driver_id', user.id)
+
+      if (ridesError) {
+        console.error('Error loading user rides:', ridesError)
+        return []
+      }
+
+      if (!myRides || myRides.length === 0) {
+        console.log('👤 User has no rides, so no booking requests')
+        setBookingRequests([])
+        return []
+      }
+
+      const rideIds = myRides.map(ride => ride.id)
+
+      // Get all pending bookings for these rides
+      const { data: requests, error } = await supabase
+        .from('bookings')
+        .select(`
+          *,
+          ride:rides(*),
+          passenger:profiles!bookings_passenger_id_fkey(
+            id,
+            full_name,
+            email,
+            phone,
+            department,
+            rating
+          )
+        `)
+        .in('ride_id', rideIds)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error loading booking requests:', error)
+        return []
+      }
+
+      const validRequests = requests?.filter(req => req.ride) || []
+      console.log('📋 Found booking requests:', validRequests.length)
+      setBookingRequests(validRequests)
+      return validRequests
+    } catch (error) {
+      console.error('Error in loadBookingRequests:', error)
+      return []
     }
   }
 
@@ -458,6 +597,216 @@ export const ProductionRideProvider = ({ children }) => {
           : notif
       )
     )
+  }
+
+  // Create live ride for tracking
+  const createLiveRide = async (rideId, bookingId, verificationCode) => {
+    try {
+      // Check if live_rides table exists first
+      const { data: tableExists } = await supabase
+        .from('live_rides')
+        .select('id')
+        .limit(1)
+        .single()
+        .then(() => ({ data: true }))
+        .catch(() => ({ data: false }))
+      
+      if (!tableExists) {
+        console.log('📋 Live rides table not ready yet. Booking confirmed without live tracking.')
+        return null
+      }
+
+      const { data, error } = await supabase
+        .from('live_rides')
+        .insert([{
+          ride_id: rideId,
+          booking_id: bookingId,
+          verification_code: verificationCode,
+          ride_status: 'confirmed',
+          created_at: new Date().toISOString()
+        }])
+        .select('*')
+        .single()
+
+      if (error) {
+        console.warn('Live ride creation failed, but booking is still confirmed:', error.message)
+        return null
+      }
+
+      console.log('✅ Live ride created:', data)
+      return data
+    } catch (error) {
+      console.warn('Live tracking not available:', error.message)
+      return null
+    }
+  }
+
+  // Get active live ride for user
+  const getActiveLiveRide = async () => {
+    if (!user) return null
+
+    try {
+      // Check if live_rides table exists first
+      const { data: liveRides, error } = await supabase
+        .from('live_rides')
+        .select('*')
+        .or(`driver_id.eq.${user.id},passenger_id.eq.${user.id}`)
+        .in('ride_status', ['confirmed', 'driver_arriving', 'arrived', 'pickup_complete', 'in_transit'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (error) {
+        console.warn('Live ride tracking not available:', error.message)
+        return null
+      }
+
+      setActiveLiveRide(liveRides)
+      return liveRides
+    } catch (error) {
+      console.warn('Live tracking not available:', error.message)
+      setActiveLiveRide(null)
+      return null
+    }
+  }
+
+  // Update live ride status
+  const updateLiveRideStatus = async (liveRideId, newStatus, additionalData = {}) => {
+    try {
+      const updateData = {
+        ride_status: newStatus,
+        updated_at: new Date().toISOString(),
+        ...additionalData
+      }
+
+      // Add status-specific data
+      if (newStatus === 'arrived') {
+        updateData.arrival_time = new Date().toISOString()
+      } else if (newStatus === 'pickup_complete') {
+        updateData.pickup_time = new Date().toISOString()
+      } else if (newStatus === 'completed') {
+        updateData.completed_at = new Date().toISOString()
+      }
+
+      const { data, error } = await supabase
+        .from('live_rides')
+        .update(updateData)
+        .eq('id', liveRideId)
+        .select('*, ride:rides(*), booking:bookings(*), driver:profiles!live_rides_driver_id_fkey(*), passenger:profiles!live_rides_passenger_id_fkey(*)')
+        .single()
+
+      if (error) throw error
+
+      setActiveLiveRide(data)
+      
+      // Also update the booking status in bookings table
+      await supabase
+        .from('bookings')
+        .update({ status: newStatus === 'completed' ? 'completed' : 'confirmed' })
+        .eq('id', data.booking_id)
+
+      console.log('✅ Live ride status updated:', newStatus)
+      return data
+    } catch (error) {
+      console.error('Error updating live ride status:', error)
+      throw error
+    }
+  }
+
+  // Complete ride and handle cleanup
+  const completeLiveRide = async (liveRideId) => {
+    try {
+      const completedRide = await updateLiveRideStatus(liveRideId, 'completed')
+      
+      // Show completion modal for review
+      setShowCompletionModal(true)
+      setShowLiveTracker(false)
+      
+      // Notify both parties
+      const driverNotification = createNotification({
+        user_id: completedRide.driver_id,
+        title: '🎉 Trip Completed!',
+        message: 'Your trip has been completed. Please rate your passenger.',
+        type: 'trip',
+        data: { live_ride_id: liveRideId }
+      })
+
+      const passengerNotification = createNotification({
+        user_id: completedRide.passenger_id,
+        title: '🎉 Trip Completed!',
+        message: 'Your trip has been completed. Please rate your driver.',
+        type: 'trip',
+        data: { live_ride_id: liveRideId }
+      })
+
+      await Promise.all([driverNotification, passengerNotification])
+      
+      return completedRide
+    } catch (error) {
+      console.error('Error completing live ride:', error)
+      addNotification('Failed to complete trip', 'error')
+      throw error
+    }
+  }
+
+  // Submit review and rating
+  const submitReview = async (reviewData) => {
+    try {
+      const { data, error } = await supabase
+        .from('reviews')
+        .insert([{
+          ...reviewData,
+          created_at: new Date().toISOString()
+        }])
+
+      if (error) throw error
+
+      // Update user's average rating
+      await updateUserRating(reviewData.reviewed_user_id)
+      
+      addNotification('✅ Review submitted successfully!', 'success')
+      setShowCompletionModal(false)
+      setActiveLiveRide(null)
+      
+      return data
+    } catch (error) {
+      console.error('Error submitting review:', error)
+      addNotification('Failed to submit review', 'error')
+      throw error
+    }
+  }
+
+  // Update user's average rating
+  const updateUserRating = async (userId) => {
+    try {
+      const { data: reviews } = await supabase
+        .from('reviews')
+        .select('rating')
+        .eq('reviewed_user_id', userId)
+
+      if (reviews && reviews.length > 0) {
+        const avgRating = reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+        
+        await supabase
+          .from('profiles')
+          .update({ rating: Math.round(avgRating * 10) / 10 })
+          .eq('id', userId)
+      }
+    } catch (error) {
+      console.error('Error updating user rating:', error)
+    }
+  }
+
+  // Show live tracker
+  const startLiveTracking = (liveRide) => {
+    setActiveLiveRide(liveRide)
+    setShowLiveTracker(true)
+  }
+
+  // Hide live tracker
+  const stopLiveTracking = () => {
+    setShowLiveTracker(false)
+    setActiveLiveRide(null)
   }
 
   // Setup real-time subscriptions when user is authenticated
@@ -617,6 +966,9 @@ export const ProductionRideProvider = ({ children }) => {
     loading,
     isInitialized,
     filters,
+    activeLiveRide,
+    showLiveTracker,
+    showCompletionModal,
     
     // Actions
     createRide,
@@ -628,6 +980,14 @@ export const ProductionRideProvider = ({ children }) => {
     generateVerificationCode,
     getBookingRequests,
     getStats,
+    
+    // Live Ride Actions
+    getActiveLiveRide,
+    updateLiveRideStatus,
+    completeLiveRide,
+    submitReview,
+    startLiveTracking,
+    stopLiveTracking,
     
     // Utilities
     isSupabaseConfigured,

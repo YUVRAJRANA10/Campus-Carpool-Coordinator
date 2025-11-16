@@ -66,7 +66,7 @@ const LandingPage = () => {
     <div className="min-h-screen">
       <Navbar />
       
-      <main className="page-container">
+      <main className="page-container main-content">
         {/* Hero Section */}
         <section className="py-20 lg:py-32">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -87,7 +87,7 @@ const LandingPage = () => {
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link to="/auth" className="btn-primary text-center">
-                  🚗 Offer a Ride
+                  + Offer a Ride
                 </Link>
                 <Link to="/auth" className="btn-secondary text-center">
                   🔍 Find Rides
@@ -101,16 +101,11 @@ const LandingPage = () => {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="relative"
             >
-              <div className="glass-card p-8 text-center">
+              <div className="glass-card p-8 text-center overflow-hidden">
                 <img 
-                  src="/cu_logo.png" 
-                  alt="Chitkara University" 
-                  className="w-16 h-16 mx-auto mb-4"
-                />
-                <img 
-                  src="/car.png" 
-                  alt="Campus Carpool" 
-                  className="w-full max-w-sm mx-auto animate-float"
+                  src="/carpool_chitkara.jpg" 
+                  alt="Campus Carpool at Chitkara University" 
+                  className="w-full h-auto rounded-lg shadow-lg object-cover"
                 />
               </div>
             </motion.div>
