@@ -1,0 +1,60 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  
+  body {
+    @apply bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen overflow-x-hidden;
+    background-attachment: fixed;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/25 backdrop-blur-md border border-white/40 rounded-xl shadow-glass;
+  }
+  
+  .glass-card-strong {
+    @apply bg-white/35 backdrop-blur-lg border border-white/50 rounded-xl shadow-glass;
+  }
+  
+  .btn-primary {
+    @apply bg-cu-red hover:bg-cu-red-dark text-white font-semibold px-6 py-3 rounded-lg transition-all duration-300 shadow-lg hover:shadow-cu-red hover:-translate-y-0.5;
+  }
+  
+  .btn-secondary {
+    @apply bg-white/20 backdrop-blur-md border border-white/40 text-cu-red hover:bg-white/30 font-semibold px-6 py-3 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5;
+  }
+  
+  .btn-ghost {
+    @apply bg-transparent hover:bg-white/10 text-slate-700 hover:text-cu-red font-medium px-4 py-2 rounded-lg transition-all duration-300;
+  }
+  
+  .input-glass {
+    @apply bg-white/20 backdrop-blur-md border border-white/40 rounded-lg px-4 py-3 text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cu-red/50 focus:border-cu-red transition-all duration-300;
+  }
+  
+  .floating-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+      radial-gradient(circle at 20% 20%, rgba(211, 11, 36, 0.13) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(211, 11, 36, 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 40% 70%, rgba(255, 107, 53, 0.06) 0%, transparent 50%);
+    animation: float 10s ease-in-out infinite;
+    pointer-events: none;
+    z-index: -1;
+  }
+  
+  .page-container {
+    @apply max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 relative z-10;
+  }
+}
