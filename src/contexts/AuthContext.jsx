@@ -27,9 +27,27 @@ export const AuthProvider = ({ children }) => {
     // Get initial session
     const getInitialSession = async () => {
       try {
+        // Check if Supabase is configured before attempting session
+        if (!isSupabaseConfigured()) {
+          if (isMounted) {
+            setSession(null)
+            setUser(null)
+            setProfile(null)
+            setLoading(false)
+            setInitializing(false)
+          }
+          return
+        }
+        
         const { data: { session }, error } = await supabase.auth.getSession()
         if (error) {
           console.error('Error getting session:', error)
+          // Clear state on session error
+          if (isMounted) {
+            setSession(null)
+            setUser(null)
+            setProfile(null)
+          }
         } else if (isMounted) {
           setSession(session)
           setUser(session?.user ?? null)
@@ -207,11 +225,43 @@ export const AuthProvider = ({ children }) => {
 
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut()
-      if (error) throw error
-      navigate('/')
+      setLoading(true)
+      
+      // Sign out from Supabase if configured
+      if (isSupabaseConfigured()) {
+        const { error } = await supabase.auth.signOut({ scope: 'global' })
+        if (error) {
+          console.warn('Supabase sign out warning:', error)
+          // Continue with local cleanup even if Supabase fails
+        }
+      }
+      
+      // Force clear all authentication state immediately
+      setUser(null)
+      setProfile(null)
+      setSession(null)
+      
+      // Clear all possible localStorage/sessionStorage auth data
+      try {
+        localStorage.removeItem('sb-' + (import.meta.env.VITE_SUPABASE_URL || '').split('//')[1]?.split('.')[0] + '-auth-token')
+        sessionStorage.clear()
+      } catch (e) {
+        console.warn('Storage clear warning:', e)
+      }
+      
+      // Force immediate navigation
+      navigate('/', { replace: true })
+      toast.success('Signed out successfully! 👋')
     } catch (error) {
-      toast.error(error.message)
+      console.error('Sign out error:', error)
+      // Force clear state even if everything fails
+      setUser(null)
+      setProfile(null)
+      setSession(null)
+      navigate('/', { replace: true })
+      toast.success('Signed out! 👋')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -236,8 +286,8 @@ export const AuthProvider = ({ children }) => {
 
   // Check if Supabase is properly configured
   const isSupabaseConfigured = () => {
-    const url = import.meta.env.VITE_SUPABASE_URL
-    const key = import.meta.env.VITE_SUPABASE_ANON_KEY
+    const url = import.meta.env.VITE_SUPABASE_URL || localStorage.getItem('supabase_url')
+    const key = import.meta.env.VITE_SUPABASE_ANON_KEY || localStorage.getItem('supabase_key')
     return url && key && url !== 'https://placeholder.supabase.co' && key !== 'placeholder-key'
   }
 
@@ -251,7 +301,7 @@ export const AuthProvider = ({ children }) => {
     signOut,
     updateProfile,
     isAuthenticated: !!user,
-    isSupabaseConfigured: isSupabaseConfigured()
+    isSupabaseConfigured
   }
 
   return (

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext'
-import { useRides } from '../contexts/RideContext'
+import { useRides } from '../contexts/ProductionRideContext'
 import { 
   Bell, 
   X, 
@@ -68,14 +68,14 @@ const NotificationCenter = () => {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-full hover:bg-white/10 transition-colors"
+        className="relative p-2 rounded-full hover:bg-white/20 hover:shadow-lg transition-all duration-200 group"
       >
-        <Bell size={20} className="text-white" />
+        <Bell size={20} className="text-slate-700 group-hover:text-cu-red transition-colors duration-200" />
         {unreadCount > 0 && (
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold"
+            className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold shadow-lg"
           >
             {unreadCount > 9 ? '9+' : unreadCount}
           </motion.div>

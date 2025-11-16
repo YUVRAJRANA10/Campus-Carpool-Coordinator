@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { useRides } from '../contexts/RideContext'
+import { useRides } from '../contexts/ProductionRideContext'
 import Navbar from '../components/Navbar'
 import DriverRequestPanel from '../components/DriverRequestPanel'
 import { 
@@ -257,7 +257,7 @@ const Dashboard = () => {
                 </h1>
                 <p className="text-slate-600">
                   Here's your personal dashboard with rides, bookings, and stats
-                  {!isSupabaseConfigured && (
+                  {!isSupabaseConfigured() && (
                     <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
                       Demo Mode
                     </span>

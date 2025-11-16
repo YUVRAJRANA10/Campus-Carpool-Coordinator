@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useRealTimeRides } from '../contexts/RealTimeRideContext'
+import { useRides } from '../contexts/ProductionRideContext'
+import toast from 'react-hot-toast'
 import { 
   MapPin, 
   Clock, 
@@ -18,11 +19,11 @@ import {
 const DriverDashboard = () => {
   const {
     bookingRequests,
-    acceptRideRequest,
-    declineRideRequest,
+    respondToBookingRequest,
+    generateVerificationCode,
     loading,
     notifications
-  } = useRealTimeRides()
+  } = useRides()
 
   const [activeRequest, setActiveRequest] = useState(null)
   const [showRequestModal, setShowRequestModal] = useState(false)
@@ -37,18 +38,29 @@ const DriverDashboard = () => {
   }, [bookingRequests, activeRequest])
 
   const handleAccept = async (requestId) => {
-    const result = await acceptRideRequest(requestId)
-    if (result.success) {
-      setShowRequestModal(false)
-      setActiveRequest(null)
+    try {
+      const verificationCode = generateVerificationCode()
+      const result = await respondToBookingRequest(requestId, 'accept', verificationCode)
+      if (result.success) {
+        setShowRequestModal(false)
+        setActiveRequest(null)
+        toast.success(`🎉 Booking accepted! Code: ${verificationCode}`)
+      }
+    } catch (error) {
+      toast.error('Failed to accept booking request')
     }
   }
 
   const handleDecline = async (requestId) => {
-    const result = await declineRideRequest(requestId)
-    if (result.success) {
-      setShowRequestModal(false)
-      setActiveRequest(null)
+    try {
+      const result = await respondToBookingRequest(requestId, 'decline')
+      if (result.success) {
+        setShowRequestModal(false)
+        setActiveRequest(null)
+        toast.success('Booking request declined')
+      }
+    } catch (error) {
+      toast.error('Failed to decline booking request')
     }
   }
 

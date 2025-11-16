@@ -19,11 +19,31 @@ export const supabase = createClient(
     },
     realtime: {
       params: {
-        eventsPerSecond: 10
+        eventsPerSecond: 5 // Reduce for better performance
+      }
+    },
+    db: {
+      schema: 'public'
+    },
+    global: {
+      headers: {
+        'x-my-custom-header': 'campus-carpool'
       }
     }
   }
 )
+
+// Test Supabase connection
+export const testConnection = async () => {
+  try {
+    const { data, error } = await supabase.from('rides').select('count').limit(1)
+    if (error) throw error
+    return { success: true, message: 'Connection successful' }
+  } catch (error) {
+    console.error('Supabase connection test failed:', error)
+    return { success: false, error: error.message }
+  }
+}
 
 // Helper functions for common operations
 export const authHelpers = {
@@ -121,65 +141,126 @@ export const authHelpers = {
 export const dbHelpers = {
   // Rides
   async createRide(rideData) {
-    const { data, error } = await supabase
-      .from('rides')
-      .insert([rideData])
-      .select()
-      .single()
+    try {
+      // Create minimal ride object with only essential columns
+      const ride = {
+        origin_name: String(rideData.origin_name || '').trim(),
+        destination_name: String(rideData.destination_name || '').trim(),
+        departure_time: new Date(rideData.departure_time).toISOString(),
+        available_seats: Math.max(1, parseInt(rideData.available_seats) || 1),
+        price_per_seat: Math.max(0, parseFloat(rideData.price_per_seat) || 0),
+        driver_id: rideData.driver_id,
+        status: 'active'
+      }
 
-    if (error) throw error
-    return data
+      // Add optional columns only if they exist in the schema
+      if (rideData.title) ride.title = String(rideData.title).trim()
+      if (rideData.description) ride.description = String(rideData.description).trim()
+      if (rideData.car_model) ride.car_model = String(rideData.car_model).trim()
+      if (rideData.car_color) ride.car_color = String(rideData.car_color).trim()
+      if (rideData.car_license) ride.car_license = String(rideData.car_license).trim()
+      if (rideData.ride_type) ride.ride_type = rideData.ride_type
+      if (rideData.preferences) ride.preferences = String(rideData.preferences).trim()
+
+      // Add coordinates if provided
+      if (rideData.origin_lat) ride.origin_lat = parseFloat(rideData.origin_lat)
+      if (rideData.origin_lng) ride.origin_lng = parseFloat(rideData.origin_lng)
+      if (rideData.destination_lat) ride.destination_lat = parseFloat(rideData.destination_lat)
+      if (rideData.destination_lng) ride.destination_lng = parseFloat(rideData.destination_lng)
+
+      // Validate required fields
+      if (!ride.origin_name || !ride.destination_name) {
+        throw new Error('Origin and destination are required')
+      }
+      if (!ride.driver_id) {
+        throw new Error('Driver ID is required')
+      }
+
+      console.log('Creating ride with minimal data:', ride)
+
+      const { data, error } = await supabase
+        .from('rides')
+        .insert(ride)
+        .select('*')
+        .single()
+
+      if (error) {
+        console.error('Supabase createRide error:', error)
+        throw new Error(`Failed to create ride: ${error.message}`)
+      }
+      
+      console.log('Ride created successfully:', data)
+      return data
+    } catch (error) {
+      console.error('Error in createRide:', error)
+      throw error
+    }
   },
 
   async getRides(filters = {}) {
-    let query = supabase
-      .from('rides')
-      .select(`
-        *,
-        driver:profiles!rides_driver_id_fkey(*)
-      `)
-      .eq('status', 'active')
+    try {
+      // Simple, clean query without complex selects
+      let query = supabase
+        .from('rides')
+        .select('*')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(20) // Limit for performance
 
-    // Apply filters
-    if (filters.origin) {
-      query = query.ilike('origin_name', `%${filters.origin}%`)
-    }
-    if (filters.destination) {
-      query = query.ilike('destination_name', `%${filters.destination}%`)
-    }
-    if (filters.date) {
-      query = query.gte('departure_time', filters.date)
-    }
+      // Apply basic filters only
+      if (filters.origin) {
+        query = query.ilike('origin_name', `%${filters.origin}%`)
+      }
+      if (filters.destination) {
+        query = query.ilike('destination_name', `%${filters.destination}%`)
+      }
+      if (filters.date) {
+        const filterDate = new Date(filters.date).toISOString().split('T')[0]
+        query = query.gte('departure_time', filterDate)
+      }
 
-    const { data, error } = await query.order('departure_time', { ascending: true })
+      const { data, error } = await query
 
-    if (error) throw error
-    return data
+      if (error) {
+        console.error('Supabase getRides error:', error)
+        return []
+      }
+      
+      return data || []
+    } catch (error) {
+      console.error('Error in getRides:', error)
+      return []
+    }
   },
 
   async getUserRides(userId, type = 'driver') {
-    const column = type === 'driver' ? 'driver_id' : 'passenger_id'
-    let query
+    try {
+      let query
+      
+      if (type === 'driver') {
+        query = supabase
+          .from('rides')
+          .select('*')
+          .eq('driver_id', userId)
+      } else {
+        query = supabase
+          .from('bookings')
+          .select('*, ride_id')
+          .eq('passenger_id', userId)
+      }
 
-    if (type === 'driver') {
-      query = supabase
-        .from('rides')
-        .select('*')
-        .eq('driver_id', userId)
-    } else {
-      query = supabase
-        .from('bookings')
-        .select(`
-          *,
-          ride:rides(*, driver:profiles!rides_driver_id_fkey(*))
-        `)
-        .eq('passenger_id', userId)
+      const { data, error } = await query.order('created_at', { ascending: false })
+
+      if (error) {
+        console.error(`Supabase getUserRides error for ${type}:`, error)
+        throw error
+      }
+      
+      return data || []
+    } catch (error) {
+      console.error('Error in getUserRides:', error)
+      return []
     }
-
-    const { data, error } = await query.order('created_at', { ascending: false })
-
-    if (error) throw error
-    return data
   },
 
   // Bookings
@@ -281,42 +362,75 @@ export const dbHelpers = {
 // Real-time subscriptions
 export const realtimeHelpers = {
   subscribeToRides(callback) {
-    return supabase
-      .channel('rides_channel')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'rides' },
-        callback
-      )
-      .subscribe()
+    try {
+      return supabase
+        .channel('public:rides')
+        .on('postgres_changes', 
+          { 
+            event: '*', 
+            schema: 'public', 
+            table: 'rides' 
+          },
+          (payload) => {
+            console.log('Real-time rides update:', payload)
+            callback(payload)
+          }
+        )
+        .subscribe((status) => {
+          console.log('Rides subscription status:', status)
+        })
+    } catch (error) {
+      console.error('Error setting up rides subscription:', error)
+      return null
+    }
   },
 
   subscribeToBookings(userId, callback) {
-    return supabase
-      .channel(`bookings_${userId}`)
-      .on('postgres_changes',
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'bookings',
-          filter: `passenger_id=eq.${userId}`
-        },
-        callback
-      )
-      .subscribe()
+    try {
+      return supabase
+        .channel(`public:bookings:${userId}`)
+        .on('postgres_changes',
+          { 
+            event: '*', 
+            schema: 'public', 
+            table: 'bookings'
+          },
+          (payload) => {
+            console.log('Real-time bookings update:', payload)
+            callback(payload)
+          }
+        )
+        .subscribe((status) => {
+          console.log('Bookings subscription status:', status)
+        })
+    } catch (error) {
+      console.error('Error setting up bookings subscription:', error)
+      return null
+    }
   },
 
   subscribeToNotifications(userId, callback) {
-    return supabase
-      .channel(`notifications_${userId}`)
-      .on('postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${userId}`
-        },
-        callback
-      )
-      .subscribe()
+    try {
+      return supabase
+        .channel(`public:notifications:${userId}`)
+        .on('postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${userId}`
+          },
+          (payload) => {
+            console.log('Real-time notification:', payload)
+            callback(payload)
+          }
+        )
+        .subscribe((status) => {
+          console.log('Notifications subscription status:', status)
+        })
+    } catch (error) {
+      console.error('Error setting up notifications subscription:', error)
+      return null
+    }
   }
 }

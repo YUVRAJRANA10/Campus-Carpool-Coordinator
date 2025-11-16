@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { useRides } from '../contexts/RideContext'
+import { useRides } from '../contexts/ProductionRideContext'
 import Navbar from '../components/Navbar'
 import { 
   MapPin, 
@@ -39,6 +39,7 @@ const CreateRide = () => {
   const navigate = useNavigate()
   const { createRide, loading } = useRides()
   const [currentStep, setCurrentStep] = useState(1)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [rideData, setRideData] = useState({
     title: '',
     description: '',
@@ -133,26 +134,68 @@ const CreateRide = () => {
   }
 
   const handleSubmit = async () => {
+    if (isSubmitting) {
+      console.log('Submit already in progress')
+      return
+    }
+
+    setIsSubmitting(true)
+    
     try {
-      // Add some default coordinates for Chitkara University
+      // Validate required fields
+      if (!rideData.origin_name || !rideData.destination_name) {
+        toast.error('Please fill in origin and destination')
+        return
+      }
+      if (!rideData.departure_time) {
+        toast.error('Please select departure time')
+        return
+      }
+      if (!rideData.available_seats || rideData.available_seats < 1) {
+        toast.error('Please specify available seats')
+        return
+      }
+
+      // Create clean ride object
       const rideWithCoordinates = {
-        ...rideData,
-        origin_lat: 30.5167,
+        title: rideData.title || `${rideData.origin_name} to ${rideData.destination_name}`,
+        description: rideData.description || '',
+        origin_name: rideData.origin_name.trim(),
+        destination_name: rideData.destination_name.trim(),
+        departure_time: rideData.departure_time,
+        available_seats: parseInt(rideData.available_seats),
+        price_per_seat: parseFloat(rideData.price_per_seat) || 0,
+        car_model: rideData.car_model || '',
+        car_color: rideData.car_color || '',
+        car_license: rideData.car_license || '',
+        ride_type: rideData.ride_type || 'one-way',
+        preferences: [
+          rideData.music_allowed ? 'Music Allowed' : '',
+          rideData.smoking_allowed ? 'Smoking Allowed' : '',
+          rideData.pets_allowed ? 'Pets Allowed' : '',
+          rideData.luggage_space ? 'Luggage Space' : ''
+        ].filter(Boolean).join(', '),
+        origin_lat: 30.5167, // Chitkara University coordinates
         origin_lng: 76.6833,
         destination_lat: rideData.destination_name.includes('Chandigarh') ? 30.7333 : 30.6000,
-        destination_lng: rideData.destination_name.includes('Chandigarh') ? 76.7794 : 76.8000,
-        status: 'active'
+        destination_lng: rideData.destination_name.includes('Chandigarh') ? 76.7794 : 76.8000
       }
       
-      const newRide = await createRide(rideWithCoordinates)
+      console.log('Submitting ride:', rideWithCoordinates)
+      const result = await createRide(rideWithCoordinates)
       
-      if (newRide) {
-        toast.success('🎉 Ride created successfully!')
+      if (result && result.success) {
+        toast.success('🎉 Ride created successfully! It\'s now live and visible to other users.')
         navigate('/dashboard')
+      } else {
+        const errorMsg = result?.error || 'Unknown error occurred'
+        toast.error(`Failed to create ride: ${errorMsg}`)
       }
     } catch (error) {
       console.error('Error creating ride:', error)
       toast.error('Failed to create ride. Please try again.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -487,10 +530,10 @@ const CreateRide = () => {
             <button
               type="button"
               onClick={handleNext}
-              disabled={loading || !validateStep(currentStep)}
+              disabled={isSubmitting || loading || !validateStep(currentStep)}
               className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
             >
-              {loading ? (
+              {isSubmitting || (loading && currentStep === 3) ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                   Creating...

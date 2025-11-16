@@ -2,8 +2,7 @@ import React, { useState, useMemo, Suspense } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { useRides } from '../contexts/RideContext'
-import { useRealTimeRides } from '../contexts/RealTimeRideContext'
+import { useRides } from '../contexts/ProductionRideContext'
 import { usePerformance, withPerformanceTracking } from '../contexts/PerformanceContext'
 import Navbar from '../components/Navbar'
 import DriverDashboard from '../components/DriverDashboard'
@@ -206,9 +205,9 @@ const OptimizedDashboardSimple = () => {
     getStats, 
     respondToBookingRequest, 
     generateVerificationCode,
-    getBookingRequests
+    getBookingRequests,
+    isSupabaseConfigured
   } = useRides()
-  const { rideStatus, activeBooking, wsConnected } = useRealTimeRides()
   const { trackPageLoad, isLoading } = usePerformance()
   const [activeTab, setActiveTab] = useState('overview')
 
@@ -307,7 +306,7 @@ const OptimizedDashboardSimple = () => {
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Real-time Driver Dashboard */}
-        {wsConnected && (
+        {isSupabaseConfigured() && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}

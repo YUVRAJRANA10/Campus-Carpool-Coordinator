@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useRides } from '../contexts/RideContext'
-import { useRealTimeRides } from '../contexts/RealTimeRideContext'
+import { useRides } from '../contexts/ProductionRideContext'
 import Navbar from '../components/Navbar'
 import BookingRequestModal from '../components/BookingRequestModal'
 import MobileBookingFlow from '../components/MobileBookingFlow'
@@ -41,8 +40,7 @@ const PREDEFINED_LOCATIONS = [
 ]
 
 const FindRides = () => {
-  const { rides, bookRide, loading } = useRides()
-  const { rideStatus, activeBooking } = useRealTimeRides()
+  const { rides, bookRide, loading, isSupabaseConfigured, updateFilters } = useRides()
   const [searchData, setSearchData] = useState({
     from: '',
     to: '',
@@ -55,6 +53,23 @@ const FindRides = () => {
   const [selectedRide, setSelectedRide] = useState(null)
   const [showBookingModal, setShowBookingModal] = useState(false)
   const [showMobileBooking, setShowMobileBooking] = useState(false)
+  const [initialLoading, setInitialLoading] = useState(true)
+
+  useEffect(() => {
+    // Handle initial loading timeout
+    const loadingTimeout = setTimeout(() => {
+      if (loading) {
+        setInitialLoading(false)
+        console.warn('Loading timeout reached, showing interface')
+      }
+    }, 5000) // 5 second timeout
+
+    if (!loading) {
+      setInitialLoading(false)
+    }
+
+    return () => clearTimeout(loadingTimeout)
+  }, [loading])
 
   useEffect(() => {
     // Filter rides based on search criteria
@@ -138,16 +153,33 @@ const FindRides = () => {
     })
   }
 
-  if (loading) {
+  if (initialLoading && loading) {
     return (
       <div className="min-h-screen">
         <Navbar />
         <div className="page-container py-20">
-          <div className="flex items-center justify-center">
+          <div className="flex flex-col items-center justify-center space-y-4">
             <div className="glass-card p-8 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cu-red mx-auto mb-4"></div>
-              <p className="text-slate-600">Loading available rides...</p>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cu-red mx-auto mb-4"></div>
+              <p className="text-slate-600 text-lg font-medium">Loading available rides...</p>
+              <p className="text-slate-500 text-sm mt-2">Setting up your carpool experience</p>
             </div>
+            
+            {/* Show setup prompt if taking too long */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 3 }}
+              className="glass-card p-6 text-center max-w-md"
+            >
+              <p className="text-slate-600 text-sm mb-3">Taking longer than expected?</p>
+              <button
+                onClick={() => setInitialLoading(false)}
+                className="btn-secondary text-sm"
+              >
+                Continue without loading rides
+              </button>
+            </motion.div>
           </div>
         </div>
       </div>
@@ -306,11 +338,35 @@ const FindRides = () => {
           <h2 className="text-2xl font-semibold text-slate-800">
             Available Rides ({filteredRides.length})
           </h2>
-          <button className="btn-ghost flex items-center">
-            <Filter size={18} className="mr-2" />
-            Filters
-          </button>
+          <div className="flex items-center space-x-2">
+            {loading && (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-cu-red"></div>
+            )}
+            <button className="btn-ghost flex items-center">
+              <Filter size={18} className="mr-2" />
+              Filters
+            </button>
+          </div>
         </div>
+
+        {/* Configuration Warning */}
+        {!isSupabaseConfigured() && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass-card p-6 mb-6 border-l-4 border-amber-500"
+          >
+            <div className="flex items-center space-x-3">
+              <div className="text-amber-500">⚠️</div>
+              <div>
+                <h3 className="font-semibold text-slate-800">Setup Required</h3>
+                <p className="text-slate-600 text-sm">
+                  Configure your Supabase database to see real rides. Until then, you can explore the interface.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* Rides List */}
         <div className="space-y-6">

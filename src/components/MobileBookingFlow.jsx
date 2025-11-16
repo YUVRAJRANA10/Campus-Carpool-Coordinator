@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useRealTimeRides } from '../contexts/RealTimeRideContext'
+import { useRides } from '../contexts/ProductionRideContext'
 import { 
   MapPin, 
   Navigation, 
@@ -22,12 +22,11 @@ const MobileBookingFlow = ({ onClose }) => {
   const {
     rideStatus,
     currentRide,
-    nearbyDrivers,
-    requestRide,
-    cancelRide,
-    getRideEstimation,
-    loading
-  } = useRealTimeRides()
+    rides,
+    bookRide,
+    loading,
+    generateVerificationCode
+  } = useRides()
 
   const [step, setStep] = useState(1) // 1: Locations, 2: Vehicle Choice, 3: Confirmation, 4: Tracking
   const [bookingData, setBookingData] = useState({
@@ -69,15 +68,20 @@ const MobileBookingFlow = ({ onClose }) => {
   }
 
   const handleConfirmBooking = async () => {
-    const result = await requestRide({
-      from_location: bookingData.from,
-      to_location: bookingData.to,
-      departure_time: bookingData.departureTime || new Date().toISOString(),
-      estimated_fare: bookingData.estimatedFare,
-      vehicle_preference: bookingData.selectedVehicle?.type || 'any'
+    // Find the first available ride or simulate booking
+    const availableRide = rides[0]
+    if (!availableRide) {
+      throw new Error('No rides available')
+    }
+    
+    const result = await bookRide(availableRide.id, {
+      seats_requested: bookingData.passengers || 1,
+      pickup_point: bookingData.from,
+      message: `Booking for ${bookingData.passengers || 1} passenger(s)`,
+      total_amount: bookingData.estimatedFare
     })
     
-    if (result.success) {
+    if (result) {
       setStep(4)
     }
   }
@@ -360,7 +364,7 @@ const MobileBookingFlow = ({ onClose }) => {
                 rideStatus={rideStatus}
                 currentRide={currentRide}
                 nearbyDrivers={nearbyDrivers}
-                onCancel={cancelRide}
+                onCancel={() => setStep(1)}
                 bookingData={bookingData}
               />
             </motion.div>

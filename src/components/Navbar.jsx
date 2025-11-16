@@ -2,7 +2,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import NotificationCenter from './NotificationCenter'
-import { Menu, X, Home, Search, Plus, LayoutDashboard, User, LogOut, Bell } from 'lucide-react'
+import { clearAllAuthState, debugAuthState } from '../utils/authUtils'
+import { Menu, X, Home, Search, Plus, LayoutDashboard, User, LogOut, Bell, Bug } from 'lucide-react'
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -11,8 +12,31 @@ const Navbar = () => {
   const navigate = useNavigate()
 
   const handleSignOut = async () => {
-    await signOut()
-    navigate('/')
+    try {
+      await signOut()
+      // Force immediate navigation and page refresh if needed
+      navigate('/', { replace: true })
+      // Small delay then force refresh if still showing logged in state
+      setTimeout(() => {
+        if (user) {
+          window.location.href = '/'
+        }
+      }, 1000)
+    } catch (error) {
+      console.error('Logout error:', error)
+      // Force navigation even on error
+      navigate('/', { replace: true })
+      window.location.href = '/'
+    }
+  }
+
+  const handleDebugAuth = () => {
+    debugAuthState()
+  }
+
+  const handleForceLogout = () => {
+    clearAllAuthState()
+    window.location.href = '/'
   }
 
   const navigation = user ? [
@@ -22,7 +46,7 @@ const Navbar = () => {
   ] : []
 
   // Show configuration warning if Supabase is not set up
-  const showConfigWarning = user && !isSupabaseConfigured
+  const showConfigWarning = user && !isSupabaseConfigured()
 
   return (
     <nav className="relative z-50">
@@ -31,7 +55,7 @@ const Navbar = () => {
         <div className="mx-4 mt-4 mb-2 bg-amber-100 border border-amber-200 rounded-lg p-3">
           <div className="flex items-center justify-center space-x-2 text-amber-800">
             <span className="text-sm font-medium">
-              🚀 Demo Mode Active - Set up Supabase for full functionality!
+              ⚠️ Setup Required: Configure your Supabase database for full real-time functionality!
             </span>
           </div>
         </div>
@@ -97,6 +121,26 @@ const Navbar = () => {
                     <LogOut size={18} />
                     <span className="font-medium">Sign Out</span>
                   </button>
+                  
+                  {/* Debug buttons for development */}
+                  {(window.location.hostname === 'localhost' || window.location.hostname.startsWith('192.168.')) && (
+                    <div className="flex items-center space-x-2 ml-2">
+                      <button
+                        onClick={handleDebugAuth}
+                        className="p-2 rounded-lg text-slate-500 hover:bg-white/20 hover:text-blue-600 transition-all duration-200"
+                        title="Debug Auth State"
+                      >
+                        <Bug size={16} />
+                      </button>
+                      <button
+                        onClick={handleForceLogout}
+                        className="text-xs px-2 py-1 rounded text-red-600 hover:bg-red-50 transition-all duration-200"
+                        title="Force Clear Auth"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  )}
                 </>
               ) : (
                 <>
@@ -172,6 +216,30 @@ const Navbar = () => {
                       <LogOut size={20} />
                       <span className="font-medium">Sign Out</span>
                     </button>
+                    
+                    {/* Debug options for mobile */}
+                    {(window.location.hostname === 'localhost' || window.location.hostname.startsWith('192.168.')) && (
+                      <div className="flex space-x-2 px-4 py-2">
+                        <button
+                          onClick={() => {
+                            handleDebugAuth()
+                            setIsMenuOpen(false)
+                          }}
+                          className="flex-1 py-2 px-3 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200 transition-all duration-200"
+                        >
+                          Debug Auth
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleForceLogout()
+                            setIsMenuOpen(false)
+                          }}
+                          className="flex-1 py-2 px-3 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200 transition-all duration-200"
+                        >
+                          Force Clear
+                        </button>
+                      </div>
+                    )}
                   </>
                 ) : (
                   <>
